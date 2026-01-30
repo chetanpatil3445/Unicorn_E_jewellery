@@ -34,6 +34,7 @@ class PasscodeController extends GetxController {
       final user = userInfo['user'];
 
       AppDataController.to.staffId.value = user['userId'];
+      AppDataController.to.ownerId.value = user['ownerId'];
       AppDataController.to.ids['ownerId'] = user['ownerId'];
       AppDataController.to.roles['staff_role'] = user['role'];
 

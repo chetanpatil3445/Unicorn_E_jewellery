@@ -180,6 +180,7 @@ class LoginController extends GetxController {
 
             await storage.write('userInfo', userInfo);
             final user = userInfo['user'];
+            AppDataController.to.ownerId.value = user['ownerId'];
             AppDataController.to.staffId.value = user['userId'];
             AppDataController.to.staffName.value = user['name'];
             AppDataController.to.ids['ownerId'] = user['ownerId'];

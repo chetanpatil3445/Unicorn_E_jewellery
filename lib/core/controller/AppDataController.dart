@@ -10,6 +10,7 @@ class AppDataController extends GetxController {
   RxnString expiryDate = RxnString();
   RxnInt firmID = RxnInt();
   RxnInt staffId = RxnInt();
+  RxnInt ownerId = RxnInt();
   RxnInt sellUserId = RxnInt();
 
 
