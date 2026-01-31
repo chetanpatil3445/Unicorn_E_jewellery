@@ -76,7 +76,6 @@ class ProductDetailPage extends StatelessWidget {
       title: Text("DESIGN DETAILS",
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13, letterSpacing: 1.2, color: premiumBlack)),
       actions: [
-        IconButton(icon: const Icon(Icons.favorite_border_rounded, size: 22, color: premiumBlack), onPressed: () {}),
         IconButton(icon: const Icon(Icons.share_outlined, size: 20, color: premiumBlack), onPressed: () {}),
         const SizedBox(width: 8),
       ],
@@ -123,6 +122,36 @@ class ProductDetailPage extends StatelessWidget {
             ),
           );
         }),
+
+        Positioned(
+          top: 20,
+          right: 20,
+          child: Obx(() {
+            final isFav = controller.productData.value?.isWishlisted ?? false;
+            return GestureDetector(
+              onTap: () => controller.toggleWishlist(),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    )
+                  ],
+                ),
+                child: Icon(
+                  isFav ? Icons.favorite : Icons.favorite_border_rounded,
+                  color: isFav ? Colors.red : premiumBlack,
+                  size: 24,
+                ),
+              ),
+            );
+          }),
+        ),
 
         // Thumbnails (Sirf tabhi dikhengi jab list empty na ho)
         if (data.images.isNotEmpty)
@@ -688,19 +717,6 @@ class ProductDetailPage extends StatelessWidget {
                                   placeholder: (context, url) => Center(child: Icon(Icons.photo, color: Colors.grey.shade300)),
                                   errorWidget: (c, u, e) => const Icon(Icons.image_not_supported_outlined, color: Colors.grey),
                                 ),
-                              ),
-                            ),
-                            // Heart Icon with Glassmorphism touch
-                            Positioned(
-                              top: 10,
-                              right: 10,
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.9),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.favorite_border_rounded, size: 16, color: premiumBlack),
                               ),
                             ),
                             // Premium "NEW" Tag

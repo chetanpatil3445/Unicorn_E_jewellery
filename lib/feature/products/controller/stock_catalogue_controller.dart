@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/apiUrls/api_urls.dart';
+import '../../../core/controller/AppDataController.dart';
 import '../../../core/utils/token_helper.dart';
+import '../../wishlist/controller/wishlist_controller.dart';
 import '../model/product_model.dart';
 
 class ProductCatalogueController extends GetxController {
@@ -119,5 +121,84 @@ class ProductCatalogueController extends GetxController {
     categoryFilter.value = ''; metalFilter.value = '';
     minPriceFilter.value = ''; maxPriceFilter.value = '';
     fetchStockItems();
+  }
+
+
+
+  Future<void> toggleWishlist(Product item) async {
+    final int ownerId = AppDataController.to.ownerId.value ?? 0;
+
+    final String productId = item.productDetails.id;
+    final bool wasWishlisted = item.isWishlisted;
+
+    try {
+      // 1. Current Controller UI update (Optimistic)
+      item.isWishlisted = !wasWishlisted;
+      stockItems.refresh();
+
+      // 2. DUSRE CONTROLLER KO SYNC KAREIN (Catalogue Controller)
+      _syncWithCatalogue(productId, item.isWishlisted);
+
+      dynamic response;
+      if (!wasWishlisted) {
+        response = await _apiClient.post(
+          Uri.parse(ApiUrls.wishlistAddApi),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            "product_id": int.parse(productId),
+            "jeweller_id": ownerId
+          }),
+        );
+      } else {
+        response = await _apiClient.delete(
+          Uri.parse("${ApiUrls.wishlistDeleteApi}/$productId"),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      if ((response.statusCode == 200 || response.statusCode == 201) && responseData['success'] == true) {
+        // 3. Wishlist Controller Sync
+        if (Get.isRegistered<WishlistController>()) {
+          final wishlistCtrl = Get.find<WishlistController>();
+          if (!wasWishlisted) {
+            wishlistCtrl.fetchWishlist();
+          } else {
+            wishlistCtrl.wishlistItems.removeWhere((w) => w.productDetails.id == productId);
+          }
+        }
+
+        Get.rawSnackbar(
+          message: responseData['message'] ?? "Wishlist updated",
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 1),
+          backgroundColor: Colors.black87,
+        );
+      } else {
+        throw responseData['message'] ?? "Something went wrong";
+      }
+
+    } catch (e) {
+      // 4. Rollback: Fail hone par dono controllers ko purani state pe laayein
+      item.isWishlisted = wasWishlisted;
+      stockItems.refresh();
+      _syncWithCatalogue(productId, wasWishlisted);
+
+      Get.snackbar("Error", e.toString(), snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+// Helper Function: Catalogue Controller ki list update karne ke liye
+  void _syncWithCatalogue(String productId, bool status) {
+    if (Get.isRegistered<ProductCatalogueController>()) {
+      final catCtrl = Get.find<ProductCatalogueController>();
+      // List mein product find karein
+      int index = catCtrl.stockItems.indexWhere((p) => p.productDetails.id == productId);
+      if (index != -1) {
+        catCtrl.stockItems[index].isWishlisted = status;
+        catCtrl.stockItems.refresh(); // UI update trigger karein
+      }
+    }
   }
 }

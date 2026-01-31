@@ -222,37 +222,43 @@ class _DashboardState extends State<Dashboard> {
   Widget _buildLiveRates() {
     return SliverToBoxAdapter(
       child: Container(
-        height: 45, // Thoda compact kiya for sleekness
+        height: 60,
         decoration: BoxDecoration(
-          color: const Color(0xFF0A0A0A), // Deepest Carbon Black
-          border: Border(
-            bottom: BorderSide(color: Dashboard.goldAccent.withOpacity(0.3), width: 0.8),
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFFF7F3F0), // Soft Silk Cream
+              Color(0xFFFDFCFB), // Back to Ivory
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0xFFD4AF37).withOpacity(0.08), // Subtle Gold Shadow
+              blurRadius: 15,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Obx(() {
           return ListView(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             children: [
-              // Gold Section
               _premiumRateItem(
                 "GOLD 24K",
                 controller.rate.value.toString(),
                 "${controller.ratePerWt.value}/${controller.ratePerWtUnit.value}",
-                const Color(0xFFD4AF37), // Luxury Gold
-                true, // Up trend
+                const Color(0xFFB8860B), // Deep Golden Rod (Premium Gold)
+                true,
               ),
-
-              _premiumDivider(),
-
-              // Silver Section
-              _premiumRateItem(
+               _premiumRateItem(
                 "SILVER",
                 controller.rateSl.value.toString(),
                 "${controller.ratePerWtSl.value}/${controller.ratePerWtUnitSL.value}",
-                const Color(0xFFC0C0C0), // Elegant Silver
-                false, // Down trend
+                const Color(0xFF707070), // Charcoal Grey for Silver Contrast
+                false,
               ),
             ],
           );
@@ -262,87 +268,73 @@ class _DashboardState extends State<Dashboard> {
   }
 
   Widget _premiumRateItem(String label, String price, String subPrice, Color metalColor, bool isUp) {
-    final trendColor = isUp ? const Color(0xFF00E676) : const Color(0xFFFF5252);
+    // Luxury Green & Deep Red (Muted tones)
+    final trendColor = isUp ? const Color(0xFF1B5E20) : const Color(0xFFB71C1C);
 
     return Row(
       children: [
-        // Metal Indicator Dot with Glow
+        // Elegant Gold Frame Icon
         Container(
-          height: 6,
-          width: 6,
+          height: 38,
+          width: 38,
           decoration: BoxDecoration(
-            color: metalColor,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(color: metalColor.withOpacity(0.6), blurRadius: 6, spreadRadius: 1),
-            ],
-          ),
-        ),
-        const SizedBox(width: 10),
-
-        // Label with tight letter spacing
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            color: Colors.white54,
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // Main Price - High Contrast
-        Text(
-          "₹$price",
-          style: GoogleFonts.outfit(
             color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(width: 6),
-
-        // Compact Sub-Price Capsule
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-          decoration: BoxDecoration(
-            color: trendColor.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(3),
-            border: Border.all(color: trendColor.withOpacity(0.2), width: 0.5),
-          ),
-          child: Row(
-            children: [
-              Icon(isUp ? Icons.arrow_drop_up : Icons.arrow_drop_down, color: trendColor, size: 14),
-              Text(
-                "₹$subPrice",
-                style: GoogleFonts.jetBrainsMono( // Monospaced for numbers looks premium
-                  color: trendColor,
-                  fontSize: 8.5,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+            shape: BoxShape.circle,
+            border: Border.all(color: metalColor.withOpacity(0.2), width: 1),
+            boxShadow: [
+              BoxShadow(color: metalColor.withOpacity(0.1), blurRadius: 4),
             ],
           ),
+          child: Center(
+            child: Icon(
+              isUp ? Icons.auto_graph_rounded : Icons.trending_down_rounded,
+              color: metalColor,
+              size: 18,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.cinzel( // Classic Serif Font for Royalty
+                color: metalColor,
+                fontSize: 9,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
+              ),
+            ),
+            Row(
+              children: [
+                Text(
+                  "₹$price",
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFF2D2D2D), // Soft Charcoal (not pure black)
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  "(${isUp ? '+' : ''}$subPrice)",
+                  style: GoogleFonts.inter(
+                    color: trendColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
         const SizedBox(width: 15),
       ],
     );
   }
 
-  Widget _premiumDivider() {
-    return Center(
-      child: Container(
-        height: 15,
-        width: 1.5,
-        margin: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: Colors.white10,
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
-  }
 
   Widget _buildHeroBanner() {
     return SliverToBoxAdapter(

@@ -32,13 +32,15 @@ class Product {
   ProductDetails productDetails;
   CalculatedPrice calculatedPrice;
   Weights weights;
-  List<ProductImage> imageUrls; // Changed from List<String>
+  List<ProductImage> imageUrls;
+  bool isWishlisted; // 1. Added the field
 
   Product({
     required this.productDetails,
     required this.calculatedPrice,
     required this.weights,
     required this.imageUrls,
+    required this.isWishlisted, // 2. Added to constructor
   });
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -46,21 +48,26 @@ class Product {
     calculatedPrice: CalculatedPrice.fromJson(json["calculated_price"]),
     weights: Weights.fromJson(json["weights"]),
     imageUrls: List<ProductImage>.from(json["image_urls"].map((x) => ProductImage.fromJson(x))),
+    isWishlisted: json["is_wishlisted"] ?? false, // 3. Added parsing with a default value
   );
 }
 
 class ProductDetails {
   String id;
   String productName;
+  String productCode;
+  String metalType;
   String category;
   String? weightUnit;
 
-  ProductDetails({required this.id, required this.productName, required this.category, this.weightUnit});
+  ProductDetails({required this.id, required this.productName,required this.productCode, required this.metalType, required this.category, this.weightUnit});
 
   factory ProductDetails.fromJson(Map<String, dynamic> json) => ProductDetails(
     id: json["id"],
     productName: json["product_name"],
+    productCode: json["product_code"],
     category: json["category"],
+    metalType: json["metal_type"],
     weightUnit: json["weight_unit"],
   );
 }

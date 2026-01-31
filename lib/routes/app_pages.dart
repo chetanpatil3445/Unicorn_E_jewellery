@@ -18,6 +18,7 @@ import '../feature/login/view/login_page.dart';
 import '../feature/login/view/otp_verify.dart';
 import '../feature/login/view/splash_screen.dart';
 import '../feature/products/view/StockDetailPage.dart';
+import '../feature/wishlist/view/wishlist_page.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -108,6 +109,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.advanceDetailsScreen,
       page: () =>   AdvanceDetailsScreen(),
+     ),
+    GetPage(
+      name: AppRoutes.wishlist,
+      page: () =>   WishlistPage(),
      ),
 
   ];

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // SystemNavigator ke liye
 import 'package:google_fonts/google_fonts.dart';
 import '../../Category/view/category_menu_page.dart';
+import '../../ProfilePage/view/ProfilePage.dart';
 import '../../products/view/stock_catalogue_page.dart';
+import '../../wishlist/view/wishlist_page.dart';
 import '../Main_View/Homepage.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -24,7 +26,8 @@ class _MainNavigationState extends State<MainNavigation> {
     Dashboard(),
     ProductCataloguePage(),
     CategoryMenuPage(),
-    const Center(child: Text("Account Settings")),
+    WishlistPage(),
+    ProfilePage(),
   ];
 
   // --- Exit Confirmation Dialog ---
@@ -125,6 +128,11 @@ class _MainNavigationState extends State<MainNavigation> {
                 icon: Icon(Icons.auto_awesome_outlined),
                 activeIcon: Icon(Icons.auto_awesome_rounded),
                 label: "Collections",
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.heart_broken_outlined),
+                activeIcon: Icon(Icons.heart_broken),
+                label: "Wishlist",
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person_outline_rounded),

@@ -3,10 +3,13 @@ import 'dart:convert';
 
 import 'package:get/get.dart';
 import 'package:unicorn_e_jewellers/core/controller/AppDataController.dart';
+import 'package:unicorn_e_jewellers/feature/products/controller/stock_catalogue_controller.dart';
 import '../../../core/apiUrls/api_urls.dart';
 import '../../../core/utils/token_helper.dart';
+import '../../Category/controller/Category_tag_controller.dart';
 import '../../logs/service/logProductInteraction.dart';
 import '../../logs/service/updateStayDuration.dart';
+import '../../wishlist/controller/wishlist_controller.dart';
 import '../model/ProductDetailResponse.dart';
 import '../model/product_model.dart'; // Assuming ApiClient is here
 
@@ -162,6 +165,75 @@ class ProductDetailController extends GetxController {
 
     // 3️⃣ Fetch new product
     fetchProductDetail(); // inside this, interaction will be logged & timer will start
+  }
+
+
+
+  // ProductDetailController ke andar add karein
+  Future<void> toggleWishlist() async {
+    final int ownerId = AppDataController.to.ownerId.value ?? 0;
+
+    final data = productData.value;
+    if (data == null) return;
+
+    final String pId = data.productDetails.id;
+    final bool wasWishlisted = data.isWishlisted;
+
+    try {
+      // 1. Local UI Update (Optimistic)
+      data.isWishlisted = !wasWishlisted;
+      productData.refresh();
+
+      // 2. Global Sync (Taaki peeche wale pages par bhi heart update ho jaye)
+      _syncWithOtherControllers(pId, data.isWishlisted);
+
+      // 3. API Call
+      if (!wasWishlisted) {
+        await _apiClient.post(
+          Uri.parse(ApiUrls.wishlistAddApi),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({"product_id": int.parse(pId), "jeweller_id": ownerId}),
+        );
+      } else {
+        await _apiClient.delete(
+          Uri.parse("${ApiUrls.wishlistDeleteApi}/$pId"),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
+
+      // Wishlist controller refresh agar registered ho toh
+      if (Get.isRegistered<WishlistController>()) {
+        Get.find<WishlistController>().fetchWishlist();
+      }
+
+    } catch (e) {
+      // Rollback on error
+      data.isWishlisted = wasWishlisted;
+      productData.refresh();
+      _syncWithOtherControllers(pId, wasWishlisted);
+      Get.snackbar("Error", "Could not update wishlist");
+    }
+  }
+
+  void _syncWithOtherControllers(String id, bool status) {
+    // Sync TagController
+    if (Get.isRegistered<TagController>()) {
+      final tagCtrl = Get.find<TagController>();
+      int idx = tagCtrl.stockItems.indexWhere((p) => p.productDetails.id == id);
+      if (idx != -1) {
+        tagCtrl.stockItems[idx].isWishlisted = status;
+        tagCtrl.stockItems.refresh();
+      }
+    }
+    // Sync ProductCatalogueController
+    if (Get.isRegistered<ProductCatalogueController>()) {
+      final catCtrl = Get.find<ProductCatalogueController>();
+      int idx = catCtrl.stockItems.indexWhere((p) => p.productDetails.id == id);
+      if (idx != -1) {
+        catCtrl.stockItems[idx].isWishlisted = status;
+        catCtrl.stockItems.refresh();
+      }
+    }
   }
 
 }

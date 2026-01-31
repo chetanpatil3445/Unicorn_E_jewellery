@@ -98,5 +98,6 @@ class AppRoutes {
   /// lot to tag
   static const String lotFineRetailStockPage = '/LotFineRetailStockPage';
   static const String lotAddStone = '/LotAddStone';
+  static const String wishlist = '/wishlist';
 
 }

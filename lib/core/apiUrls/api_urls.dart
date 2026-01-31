@@ -3,10 +3,10 @@
 
 class ApiUrls {
   /// 🔹 Base URL
-  // static const String baseUrl = "http://65.0.100.3:3000/api/";
-  // static const String baseUrl2 = "http://65.0.100.3:3000/";
-  static const String baseUrl = "https://stephine-unsplendid-unharshly.ngrok-free.dev/api/";
-  static const String baseUrl2 = "https://stephine-unsplendid-unharshly.ngrok-free.dev/";
+  static const String baseUrl = "http://65.0.100.3:3000/api/";
+  static const String baseUrl2 = "http://65.0.100.3:3000/";
+  // static const String baseUrl = "https://stephine-unsplendid-unharshly.ngrok-free.dev/api/";
+  // static const String baseUrl2 = "https://stephine-unsplendid-unharshly.ngrok-free.dev/";
 
 
   /// 🔹 Auth Endpoints
@@ -44,5 +44,7 @@ class ApiUrls {
   /// eccomerce track user interactions api
   static const String interactionsLog = "${baseUrl}interactions/log";
   static const String interactionsDuration = "${baseUrl}interactions/update-duration";
+  static const String wishlistAddApi = "${baseUrl}wishlist";
+  static const String wishlistDeleteApi = "${baseUrl}wishlist";
 
 }

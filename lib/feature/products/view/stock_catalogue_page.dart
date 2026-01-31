@@ -216,6 +216,34 @@ class _ProductCataloguePageState extends State<ProductCataloguePage> {
     );
   }
 
+  // Widget _premiumImage(Product item, double width) {
+  //   String? imageUrl = item.imageUrls.isNotEmpty ? item.imageUrls[0].imageUrl : null;
+  //   return Stack(
+  //     children: [
+  //       Container(
+  //         width: width,
+  //         height: double.infinity,
+  //         decoration: BoxDecoration(
+  //           borderRadius: BorderRadius.circular(15),
+  //           color: const Color(0xFFF9F9F9),
+  //         ),
+  //         clipBehavior: Clip.antiAlias,
+  //         child: imageUrl != null && imageUrl.isNotEmpty
+  //             ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder())
+  //             : _buildPlaceholder(),
+  //       ),
+  //       Positioned(
+  //         top: 8, right: 8,
+  //         child: Container(
+  //           padding: const EdgeInsets.all(6),
+  //           decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), shape: BoxShape.circle),
+  //           child: const Icon(Icons.favorite_border, size: 16, color: deepBlack),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
+
   Widget _premiumImage(Product item, double width) {
     String? imageUrl = item.imageUrls.isNotEmpty ? item.imageUrls[0].imageUrl : null;
     return Stack(
@@ -234,10 +262,22 @@ class _ProductCataloguePageState extends State<ProductCataloguePage> {
         ),
         Positioned(
           top: 8, right: 8,
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), shape: BoxShape.circle),
-            child: const Icon(Icons.favorite_border, size: 16, color: deepBlack),
+          child: GestureDetector(
+            onTap: () => controller.toggleWishlist(item), // Function call
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)]
+              ),
+              child: Icon(
+                // Status check karke icon aur color badlein
+                item.isWishlisted ? Icons.favorite : Icons.favorite_border,
+                size: 18,
+                color: item.isWishlisted ? Colors.red : deepBlack,
+              ),
+            ),
           ),
         ),
       ],

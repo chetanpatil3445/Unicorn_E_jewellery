@@ -3,10 +3,13 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:unicorn_e_jewellers/core/controller/AppDataController.dart';
 
 import '../../../core/apiUrls/api_urls.dart';
 import '../../../core/utils/token_helper.dart';
+import '../../products/controller/stock_catalogue_controller.dart';
 import '../../products/model/product_model.dart';
+import '../../wishlist/controller/wishlist_controller.dart';
 
 class TagController extends GetxController {
    var categorizedTags = <String, List<String>>{
@@ -96,7 +99,14 @@ class TagController extends GetxController {
    void onInit() {
      super.onInit();
      searchController = TextEditingController();
+     // Inhe yahan initialize kar dein taaki clearFilters() kabhi crash na kare
+     categoryController = TextEditingController();
+     metalController = TextEditingController();
+     minPriceController = TextEditingController();
+     maxPriceController = TextEditingController();
    }
+
+
 
    var selectedMetal = "Gold".obs; // Default value
    final List<String> metalOptions = ["Gold", "Silver", "Platinum", "Rose Gold"];
@@ -176,11 +186,16 @@ class TagController extends GetxController {
      minPriceFilter.value = '';
      maxPriceFilter.value = '';
 
-     // Controllers ko bhi saaf karna zaroori hai UI reset ke liye
-     categoryController.clear();
-     metalController.clear();
-     minPriceController.clear();
-     maxPriceController.clear();
+     // Late controllers ko check karke hi clear karein
+     try {
+       categoryController.clear();
+       metalController.clear();
+       minPriceController.clear();
+       maxPriceController.clear();
+     } catch (e) {
+       // Agar initialize nahi huye toh crash nahi hoga
+       print("Filters not initialized yet, skipping clear.");
+     }
 
      fetchStockItems();
    }
@@ -192,4 +207,87 @@ class TagController extends GetxController {
     clearFilters();
   }
 
+
+
+
+   Future<void> toggleWishlist(Product item) async {
+     final int ownerId = AppDataController.to.ownerId.value ?? 0;
+     final String productId = item.productDetails.id;
+     final bool wasWishlisted = item.isWishlisted;
+
+     try {
+       // 1. Current Controller UI Update (Optimistic)
+       item.isWishlisted = !wasWishlisted;
+       stockItems.refresh();
+
+       // 2. Dusre Controllers mein bhi turant UI update karein (Sync)
+       _syncOtherControllers(productId, item.isWishlisted);
+
+       dynamic response;
+       if (!wasWishlisted) {
+         response = await _apiClient.post(
+           Uri.parse(ApiUrls.wishlistAddApi),
+           headers: {'Content-Type': 'application/json'},
+           body: jsonEncode({"product_id": int.parse(productId), "jeweller_id": ownerId}),
+         );
+       } else {
+         response = await _apiClient.delete(
+           Uri.parse("${ApiUrls.wishlistDeleteApi}/$productId"),
+           headers: {'Content-Type': 'application/json'},
+         );
+       }
+
+       final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+       if ((response.statusCode == 200 || response.statusCode == 201) && responseData['success'] == true) {
+
+         // 3. Wishlist Page ki list update karein
+         if (Get.isRegistered<WishlistController>()) {
+           final wishCtrl = Get.find<WishlistController>();
+           if (!wasWishlisted) {
+             wishCtrl.fetchWishlist(); // Naya item add hua toh list refresh karein
+           } else {
+             wishCtrl.wishlistItems.removeWhere((w) => w.productDetails.id == productId);
+           }
+         }
+
+         Get.rawSnackbar(
+           message: responseData['message'] ?? "Wishlist updated",
+           snackPosition: SnackPosition.BOTTOM,
+           duration: const Duration(milliseconds: 900),
+           backgroundColor: Colors.black87,
+         );
+       } else {
+         throw responseData['message'] ?? "Server error";
+       }
+     } catch (e) {
+       // 4. Rollback: Agar fail hua toh sab jagah wapas purana state
+       item.isWishlisted = wasWishlisted;
+       stockItems.refresh();
+       _syncOtherControllers(productId, wasWishlisted);
+
+       Get.snackbar("Error", e.toString(), snackPosition: SnackPosition.BOTTOM);
+     }
+   }
+
+   void _syncOtherControllers(String productId, bool status) {
+     if (Get.isRegistered<ProductCatalogueController>()) {
+      final catCtrl = Get.find<ProductCatalogueController>();
+      int index = catCtrl.stockItems.indexWhere((p) => p.productDetails.id == productId);
+      if (index != -1) {
+        catCtrl.stockItems[index].isWishlisted = status;
+        catCtrl.stockItems.refresh();
+      }
+    }
+
+    // Sync Tag Controller (Agar ye function TagController ke bahar hai toh)
+    if (Get.isRegistered<TagController>()) {
+      final tagCtrl = Get.find<TagController>();
+      int index = tagCtrl.stockItems.indexWhere((p) => p.productDetails.id == productId);
+      if (index != -1) {
+        tagCtrl.stockItems[index].isWishlisted = status;
+        tagCtrl.stockItems.refresh();
+      }
+    }
+  }
  }

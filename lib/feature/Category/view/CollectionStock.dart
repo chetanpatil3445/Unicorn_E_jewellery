@@ -224,6 +224,62 @@ class _CollectionStockState extends State<CollectionStock> {
     );
   }
 
+
+
+  // Widget _premiumImage(Product item, double width) {
+  //   String? imageUrl = item.imageUrls.isNotEmpty ? item.imageUrls[0].imageUrl : null;
+  //   return Stack(
+  //     children: [
+  //       Container(
+  //         width: width,
+  //         height: double.infinity,
+  //         decoration: BoxDecoration(
+  //           borderRadius: BorderRadius.circular(15),
+  //           color: const Color(0xFFF9F9F9),
+  //         ),
+  //         clipBehavior: Clip.antiAlias,
+  //         child: imageUrl != null && imageUrl.isNotEmpty
+  //             ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder())
+  //             : _buildPlaceholder(),
+  //       ),
+  //       // --- WISHLIST BUTTON START ---
+  //       Positioned(
+  //         top: 8,
+  //         right: 8,
+  //         child: GestureDetector(
+  //           onTap: () => controller.toggleWishlist(item), // Controller ka function call
+  //           child: Container(
+  //             padding: const EdgeInsets.all(6),
+  //             decoration: BoxDecoration(
+  //               color: Colors.white.withOpacity(0.9),
+  //               shape: BoxShape.circle,
+  //               boxShadow: [
+  //                 BoxShadow(
+  //                   color: Colors.black.withOpacity(0.1),
+  //                   blurRadius: 4,
+  //                   offset: const Offset(0, 2),
+  //                 )
+  //               ],
+  //             ),
+  //             // Obx yahan isliye zaroori hai taaki sirf icon refresh ho jab wishlist toggle ho
+  //             child: Obx(() {
+  //               // trigger refresh for this specific item inside the list
+  //               final isFav = controller.stockItems.firstWhere((p) => p.productDetails.id == item.productDetails.id).isWishlisted;
+  //
+  //               return Icon(
+  //                 isFav ? Icons.favorite : Icons.favorite_border,
+  //                 size: 16,
+  //                 color: isFav ? Colors.red : deepBlack,
+  //               );
+  //             }),
+  //           ),
+  //         ),
+  //       ),
+  //       // --- WISHLIST BUTTON END ---
+  //     ],
+  //   );
+  // }
+
   Widget _premiumImage(Product item, double width) {
     String? imageUrl = item.imageUrls.isNotEmpty ? item.imageUrls[0].imageUrl : null;
     return Stack(
@@ -241,11 +297,34 @@ class _CollectionStockState extends State<CollectionStock> {
               : _buildPlaceholder(),
         ),
         Positioned(
-          top: 8, right: 8,
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), shape: BoxShape.circle),
-            child: const Icon(Icons.favorite_border, size: 16, color: deepBlack),
+          top: 8,
+          right: 8,
+          child: GestureDetector(
+            onTap: () => controller.toggleWishlist(item),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))
+                ],
+              ),
+              child: Obx(() {
+                final currentItem = controller.stockItems.firstWhere(
+                        (p) => p.productDetails.id == item.productDetails.id,
+                    orElse: () => item
+                );
+
+                bool isFav = currentItem.isWishlisted;
+
+                return Icon(
+                  isFav ? Icons.favorite : Icons.favorite_border,
+                  size: 16,
+                  color: isFav ? Colors.red : deepBlack,
+                );
+              }),
+            ),
           ),
         ),
       ],
