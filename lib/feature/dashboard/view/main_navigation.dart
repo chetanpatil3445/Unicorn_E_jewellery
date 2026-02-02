@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // SystemNavigator ke liye
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/appcolors.dart';
 import '../../Category/view/category_menu_page.dart';
 import '../../ProfilePage/view/ProfilePage.dart';
 import '../../products/view/stock_catalogue_page.dart';
@@ -17,10 +18,6 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
-  // Luxury Theme Colors
-  static const Color goldAccent = Color(0xFFD4AF37);
-  static const Color deepBlack = Color(0xFF1A1A1A);
-  static const Color ivoryWhite = Color(0xFFFDFCFB);
 
   final List<Widget> _pages = [
     Dashboard(),
@@ -109,7 +106,7 @@ class _MainNavigationState extends State<MainNavigation> {
             },
             type: BottomNavigationBarType.fixed,
             backgroundColor: Colors.white,
-            selectedItemColor: goldAccent,
+            selectedItemColor: tableHeaders,
             unselectedItemColor: Colors.grey.shade400,
             selectedLabelStyle: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600),
             unselectedLabelStyle: GoogleFonts.poppins(fontSize: 11),
@@ -130,8 +127,8 @@ class _MainNavigationState extends State<MainNavigation> {
                 label: "Collections",
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.heart_broken_outlined),
-                activeIcon: Icon(Icons.heart_broken),
+                icon: Icon(Icons.favorite_border),
+                activeIcon: Icon(Icons.favorite_border),
                 label: "Wishlist",
               ),
               BottomNavigationBarItem(

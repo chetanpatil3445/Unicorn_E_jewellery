@@ -3,7 +3,7 @@ import '../feature/cr_dr/binding/cr_dr_binding.dart';
 import '../feature/cr_dr/view/AdvanceDetails.dart';
 import '../feature/cr_dr/view/cr_dr_list_view.dart';
 import '../feature/cr_dr/view/udharDetail.dart';
-import '../feature/dashboard/binding.dart';
+import '../feature/dashboard/binding/binding.dart';
 import '../feature/dashboard/view/AboutUsPage.dart';
 import '../feature/dashboard/view/ContactUsPage.dart';
 import '../feature/dashboard/view/HelpPage.dart';

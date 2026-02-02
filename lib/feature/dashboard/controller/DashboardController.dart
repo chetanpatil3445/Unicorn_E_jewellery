@@ -5,7 +5,10 @@ import '../../../core/controller/AppDataController.dart';
 import '../../../core/utils/token_helper.dart';
 import 'dart:convert';
 
-import '../metal_rate_service.dart';
+import '../model/HomeSection.dart';
+import '../model/banner_model.dart';
+import '../service/metal_rate_service.dart';
+import '../model/story_model.dart';
 
 
 class DashboardController extends GetxController {
@@ -19,17 +22,24 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    fetchHomeSections();
+    fetchBanners();
     loadUserData();
     fetchGoldRates();
     fetchSilverRates();
     AppDataController.to.expiryCheck.value = storage.read('subscriptionStatus');
     AppDataController.to.expiryDate.value = storage.read('expiryDate');
+    fetchStories(); // Add this
   }
 
    Future<void> refreshData() async {
     loadUserData();
     fetchGoldRates();
     fetchSilverRates();
+    fetchStories();
+    fetchBanners();
+    fetchHomeSections();
+
   }
 
   void loadUserData() {
@@ -119,6 +129,84 @@ class DashboardController extends GetxController {
       print("Error: $e");
       Get.snackbar('Error', 'Check internet connection');
     }
+  }
+
+  RxList<StoryModel> stories = <StoryModel>[].obs;
+  RxBool isLoadingStories = false.obs;
+
+  Future<void> fetchStories() async {
+    try {
+      isLoadingStories.value = true;
+
+      final response = await _apiClient.get(
+        Uri.parse(ApiUrls.stories),
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+
+        if (decoded['success'] == true) {
+          List data = decoded['data'];
+
+          stories.value =
+              data.map((e) => StoryModel.fromJson(e)).toList();
+        }
+      }
+    } catch (e) {
+      print("Story Error: $e");
+    } finally {
+      isLoadingStories.value = false;
+    }
+  }
+
+  RxList<HomeSection> homeSections = <HomeSection>[].obs;
+
+  Future<void> fetchHomeSections() async {
+    try {
+      final response = await _apiClient.get(Uri.parse(ApiUrls.homeSections));
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded['success'] == true) {
+          List data = decoded['data'];
+          var list = data.map((e) => HomeSection.fromJson(e)).toList();
+          list.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+          homeSections.assignAll(list.where((s) => s.isVisible).toList());
+        }
+      }
+    } catch (e) {
+      print("Home Section Error: $e");
+    }
+  }
+
+
+  RxList<BannerModel> allBanners = <BannerModel>[].obs;
+  RxBool isLoadingBanners = false.obs;
+
+  Future<void> fetchBanners() async {
+    try {
+      isLoadingBanners.value = true;
+
+      final response = await _apiClient.get(
+        Uri.parse(ApiUrls.appBanners),
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded['success'] == true) {
+          allBanners.value = (decoded['data'] as List)
+              .map((e) => BannerModel.fromJson(e))
+              .toList();
+        }
+      }
+    } finally {
+      isLoadingBanners.value = false;
+    }
+  }
+
+  List<BannerModel> getBannersByType(String type) {
+    final list = allBanners.where((b) => b.bannerType == type).toList();
+    list.sort((a, b) => a.priority.compareTo(b.priority));
+    return list;
   }
 
 

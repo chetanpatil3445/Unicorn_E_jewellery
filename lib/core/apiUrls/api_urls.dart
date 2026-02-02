@@ -46,5 +46,8 @@ class ApiUrls {
   static const String interactionsDuration = "${baseUrl}interactions/update-duration";
   static const String wishlistAddApi = "${baseUrl}wishlist";
   static const String wishlistDeleteApi = "${baseUrl}wishlist";
+  static const String stories = "${baseUrl}stories";
+  static const String homeSections = "${baseUrl}homepage-sections";
+  static const String appBanners = "${baseUrl}app-banners";
 
 }

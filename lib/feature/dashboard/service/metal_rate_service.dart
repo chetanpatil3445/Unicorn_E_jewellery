@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import '../../core/apiUrls/api_urls.dart';
-import '../../core/utils/token_helper.dart';
+import '../../../core/apiUrls/api_urls.dart';
+import '../../../core/utils/token_helper.dart';
 
 class MetalRateService {
   final ApiClient _apiClient = ApiClient();

@@ -60,6 +60,12 @@ const Color faintTeal   = Color(0xFF7AC7C4);
 const Color faintOldGold = Color(0xFFD9A441);
 
 
+  const Color goldAccent = Color(0xFFD4AF37);
+  const Color deepBlack = Color(0xFF1A1A1A);
+  const Color ivoryWhite = Color(0xFFFDFCFB);
+  const Color softGrey = Color(0xFFF4F4F4);
+  const Color accentRed = Color(0xFFB22222);
+
 
 
 
@@ -73,3 +79,5 @@ const HeadingStyle = TextStyle(
 );
 
 const DefaultStyle12Text = TextStyle(fontSize: 12 , color: AllTextColor);
+
+
