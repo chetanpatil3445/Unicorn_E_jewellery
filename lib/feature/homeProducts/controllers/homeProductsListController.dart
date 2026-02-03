@@ -12,59 +12,9 @@ import '../../products/controller/stock_catalogue_controller.dart';
 import '../../products/model/product_model.dart';
 import '../../wishlist/controller/wishlist_controller.dart';
 
-class TagController extends GetxController {
-   var categorizedTags = <String, List<String>>{
-    'Highlights': [
-      'Trending', 'Best Seller', 'Recommended', 'New Arrival', 'Hot Deal',
-      'Limited Stock', 'Fast Selling', 'Top Rated', 'Most Viewed',
-      'Customer Favorite', 'Staff Pick'
-    ],
-    'Offers': [
-      'On Sale', 'Discounted', 'Budget Friendly', 'Premium Collection',
-      'Luxury Range', 'Clearance Sale', 'Festive Offer'
-    ],
-    'Occasions': [
-      'Wedding Special', 'Bridal Collection', 'Engagement Special',
-      'Party Wear', 'Daily Wear', 'Festival Special', 'Anniversary Gift',
-      'Gift Ready', 'Festive Collection'
-    ],
-    'Material': [
-      'Hallmarked Gold', 'Pure Silver', 'Diamond Jewellery',
-      'Lightweight Jewellery', 'Heavy Bridal Set', 'Handmade',
-      'Designer Collection', 'Antique Finish'
-    ],
-    'Style': [
-      'Minimal Design', 'Traditional Look', 'Modern Style',
-      'Vintage Collection', 'Celebrity Inspired', 'Ethnic Wear',
-      'Statement Jewellery'
-    ],
-    'Festivals': [
-      'Diwali Collection', 'Dussehra Special', 'Navratri Special',
-      'Raksha Bandhan Gifts', 'Ganesh Chaturthi Special', 'Karva Chauth Collection',
-      'Eid Special', 'Holi Collection', 'Christmas Collection', 'Pongal Special',
-      'Baisakhi Special', 'Onam Collection', 'New Year Special', 'Republic Day Collection',
-      'Independence Day Collection', 'Makar Sankranti Collection', 'Gudi Padwa Collection',
-      'Vishu Collection', 'Easter Special', 'Mahashivratri Special', 'Janmashtami Collection',
-      'Good Friday Special', 'Wedding Season Collection'
-    ],
-    'Stock Status': [
-      'Pre Order', 'Coming Soon', 'Low Stock', 'In Stock'
-    ],
-  }.obs;
+class homeProductsListController extends GetxController {
 
-  var selectedCategory = 'Highlights'.obs;
-  var selectedTag = ''.obs;
-  var gender = ''.obs;
-
-  void selectCategory(String category) {
-    selectedCategory.value = category;
-    categorizedTags.refresh(); // Force refresh for UI safety
-  }
-
-
-
-
-
+   var selectedTag = ''.obs;
 
    final ApiClient _apiClient = ApiClient();
 
@@ -97,9 +47,33 @@ class TagController extends GetxController {
    var searchText = ''.obs; // Search ke liye naya Rx variable
    late TextEditingController searchController;
 
+
+   late String clickType;
+   late int targetId;
+
+   List<int> categories = [];
+   List<int> tags = [];
+
+
    @override
    void onInit() {
      super.onInit();
+     // Get arguments
+     clickType = Get.arguments['click_type'] ?? '';
+     targetId = Get.arguments['target_id'] ?? 0;
+
+     // Populate lists based on clickType
+     if (clickType.toLowerCase() == 'category') {
+       categories = [targetId]; // Only categories get the value
+       tags = [];               // Tags stay empty
+     } else if (clickType.toLowerCase() == 'tag') {
+       tags = [targetId];       // Only tags get the value
+       categories = [];         // Categories stay empty
+     } else {
+       categories = [];
+       tags = [];
+     }
+
      searchController = TextEditingController();
      categoryController = TextEditingController();
      metalController = TextEditingController();
@@ -109,10 +83,7 @@ class TagController extends GetxController {
 
 
 
-
-
-   var selectedMetal = "Gold".obs; // Default value
-   final List<String> metalOptions = ["Gold", "Silver", "Platinum", "Rose Gold"];
+    final List<String> metalOptions = ["Gold", "Silver", "Platinum", "Rose Gold"];
 
    Future<void> fetchStockItems({bool isLoadMore = false}) async {
      if (isLoadMore && isLoadMoreFetching.value) return;
@@ -130,18 +101,16 @@ class TagController extends GetxController {
        final Map<String, dynamic> bodyData = {
          "limit": _limit,
          "offset": _offset,
-         // "tags": [selectedTag.value],
+         "categories": categories,
+         "tags": tags,
        };
 
-       // Search Text implementation
-       if (searchText.value.isNotEmpty) {
+        if (searchText.value.isNotEmpty) {
          bodyData["search_text"] = searchText.value;
        }
 
        if (categoryFilter.value.isNotEmpty) bodyData["categories"] = [categoryFilter.value];
        if (metalFilter.value.isNotEmpty) bodyData["metal_type"] = metalFilter.value;
-       if (gender.value.isNotEmpty) bodyData["gender"] = gender.value;
-       if (selectedTag.value.isNotEmpty) bodyData["tags"] = [selectedTag.value];
 
        double? minP = double.tryParse(minPriceFilter.value);
        if (minP != null) bodyData["min_price"] = minP;
@@ -149,33 +118,18 @@ class TagController extends GetxController {
        double? maxP = double.tryParse(maxPriceFilter.value);
        if (maxP != null) bodyData["max_price"] = maxP;
 
-       print(bodyData);
-
        final response = await _apiClient.post(
-         Uri.parse(ApiUrls.productListApi),
+         Uri.parse(ApiUrls.homeProductListApi),
          headers: {'Content-Type': 'application/json'},
          body: jsonEncode(bodyData),
        );
 
-       // if (response.statusCode == 200) {
-       //   final productRes = productResponseFromJson(response.body);
-       //   stockItems.addAll(productRes.data.products);
-       //   hasMore.value = productRes.data.pagination.hasMore;
-       //   _offset += _limit;
-       // }
        if (response.statusCode == 200) {
          final productRes = productResponseFromJson(response.body);
-
-         final newProducts = productRes.data.products.where((newItem) {
-           return !stockItems.any((oldItem) => oldItem.productDetails.id == newItem.productDetails.id);
-         }).toList();
-
-         stockItems.addAll(newProducts);
-
+         stockItems.addAll(productRes.data.products);
          hasMore.value = productRes.data.pagination.hasMore;
          _offset += _limit;
        }
-
      } catch (e) {
        print("Error fetching: $e");
      } finally {
@@ -213,6 +167,7 @@ class TagController extends GetxController {
        minPriceController.clear();
        maxPriceController.clear();
      } catch (e) {
+       // Agar initialize nahi huye toh crash nahi hoga
        print("Filters not initialized yet, skipping clear.");
      }
 
@@ -300,8 +255,8 @@ class TagController extends GetxController {
     }
 
     // Sync Tag Controller (Agar ye function TagController ke bahar hai toh)
-    if (Get.isRegistered<TagController>()) {
-      final tagCtrl = Get.find<TagController>();
+    if (Get.isRegistered<homeProductsListController>()) {
+      final tagCtrl = Get.find<homeProductsListController>();
       int index = tagCtrl.stockItems.indexWhere((p) => p.productDetails.id == productId);
       if (index != -1) {
         tagCtrl.stockItems[index].isWishlisted = status;

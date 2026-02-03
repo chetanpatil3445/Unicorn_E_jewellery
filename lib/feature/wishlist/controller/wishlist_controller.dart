@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:unicorn_e_jewellers/core/apiUrls/api_urls.dart';
 import 'package:unicorn_e_jewellers/core/utils/token_helper.dart';
 import '../../Category/controller/Category_tag_controller.dart';
+import '../../dashboard/controller/DashboardController.dart';
 import '../../products/controller/stock_catalogue_controller.dart';
 import '../../products/model/product_model.dart';
 import '../model/wishlist_model.dart';
@@ -33,19 +34,7 @@ class WishlistController extends GetxController {
     }
   }
 
-  // Future<void> removeFromWishlist(String productId, int index) async {
-  //   try {
-  //     final response = await _apiClient.delete(
-  //       Uri.parse("${ApiUrls.wishlistDeleteApi}/$productId"),
-  //     );
-  //     if (response.statusCode == 200) {
-  //       wishlistItems.removeAt(index);
-  //       Get.rawSnackbar(message: "Removed from wishlist", backgroundColor: Colors.black87);
-  //     }
-  //   } catch (e) {
-  //     Get.snackbar("Error", "Could not remove item");
-  //   }
-  // }
+
 
   Future<void> removeFromWishlist(String productId, int index) async {
     try {
@@ -56,6 +45,20 @@ class WishlistController extends GetxController {
       if (response.statusCode == 200) {
         // 1. Wishlist ki apni list se hatao
         wishlistItems.removeAt(index);
+
+        // 1. Dashboard Controller (Homepage) sync karein 🌟
+        if (Get.isRegistered<DashboardController>()) {
+          final dashCtrl = Get.find<DashboardController>();
+
+          // Dashboard ke saare sections (Trending, Recommended etc.) loop karein
+          dashCtrl.sectionProducts.forEach((key, list) {
+            int itemIdx = list.indexWhere((p) => p.productDetails.id == productId);
+            if (itemIdx != -1) {
+              list[itemIdx].isWishlisted = false;
+            }
+          });
+          dashCtrl.sectionProducts.refresh(); // UI update trigger karein
+        }
 
         // 2. Catalogue Controller check karo aur wahan ka flag false karo
         if (Get.isRegistered<ProductCatalogueController>()) {

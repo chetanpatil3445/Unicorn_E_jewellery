@@ -14,6 +14,7 @@ class CategoryMenuPage extends StatelessWidget {
   static const Color background = Color(0xFFF9F9F9);
   static const Color darkText = Color(0xFF1A1A1A);
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -136,12 +137,14 @@ class CategoryMenuPage extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            controller.selectedTag.value = tagName;
-            Get.to(() => CollectionStock(), arguments: {
-              "category": categoryName,
-              "tag": tagName
+          onTap: () async {
+            await Future.microtask(() {
+              controller.selectedTag.value = tagName;
             });
+              Get.to(() => CollectionStock(), arguments: {
+                "category": categoryName,
+                "tag": tagName,
+               });
           },
           borderRadius: BorderRadius.circular(6),
           child: Center(

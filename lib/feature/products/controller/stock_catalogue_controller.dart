@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/apiUrls/api_urls.dart';
 import '../../../core/controller/AppDataController.dart';
 import '../../../core/utils/token_helper.dart';
+import '../../dashboard/controller/DashboardController.dart';
 import '../../wishlist/controller/wishlist_controller.dart';
 import '../model/product_model.dart';
 
@@ -200,5 +201,21 @@ class ProductCatalogueController extends GetxController {
         catCtrl.stockItems.refresh(); // UI update trigger karein
       }
     }
+
+    // 1. Dashboard Controller (Homepage sections) sync karein 🌟
+    if (Get.isRegistered<DashboardController>()) {
+      final dashCtrl = Get.find<DashboardController>();
+
+      // Dashboard mein 'sectionProducts' ek Map hai, har list ko check karna hoga
+      dashCtrl.sectionProducts.forEach((key, list) {
+        for (var p in list) {
+          if (p.productDetails.id == productId) {
+            p.isWishlisted = status;
+          }
+        }
+      });
+      dashCtrl.sectionProducts.refresh(); // UI update trigger karein
+    }
+
   }
 }

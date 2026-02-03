@@ -10,6 +10,7 @@ import '../feature/dashboard/view/HelpPage.dart';
 import '../feature/dashboard/Main_View/Homepage.dart';
 import '../feature/dashboard/view/Notification.dart';
 import '../feature/dashboard/view/main_navigation.dart';
+import '../feature/homeProducts/views/HomeProductList.dart';
 import '../feature/login/Binding.dart';
 import '../feature/login/view/CreatePasscodeScreen.dart';
 import '../feature/login/view/ForgotPasscodeScreen.dart';
@@ -113,6 +114,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.wishlist,
       page: () =>   WishlistPage(),
+     ),
+    GetPage(
+      name: AppRoutes.homeProductsList,
+      page: () =>   HomeProductList(),
      ),
 
   ];

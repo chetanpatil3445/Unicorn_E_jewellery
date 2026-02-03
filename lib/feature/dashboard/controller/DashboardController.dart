@@ -1,10 +1,14 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../core/apiUrls/api_urls.dart';
 import '../../../core/controller/AppDataController.dart';
 import '../../../core/utils/token_helper.dart';
 import 'dart:convert';
-
+import '../../homeProducts/controllers/homeProductsListController.dart';
+import '../../products/controller/stock_catalogue_controller.dart';
+import '../../products/model/product_model.dart';
+import '../../wishlist/controller/wishlist_controller.dart';
 import '../model/HomeSection.dart';
 import '../model/banner_model.dart';
 import '../service/metal_rate_service.dart';
@@ -30,6 +34,7 @@ class DashboardController extends GetxController {
     AppDataController.to.expiryCheck.value = storage.read('subscriptionStatus');
     AppDataController.to.expiryDate.value = storage.read('expiryDate');
     fetchStories(); // Add this
+    loadAllProductSections(); // Add this
   }
 
    Future<void> refreshData() async {
@@ -39,6 +44,7 @@ class DashboardController extends GetxController {
     fetchStories();
     fetchBanners();
     fetchHomeSections();
+    loadAllProductSections();
 
   }
 
@@ -173,11 +179,10 @@ class DashboardController extends GetxController {
           homeSections.assignAll(list.where((s) => s.isVisible).toList());
         }
       }
-    } catch (e) {
+     } catch (e) {
       print("Home Section Error: $e");
     }
   }
-
 
   RxList<BannerModel> allBanners = <BannerModel>[].obs;
   RxBool isLoadingBanners = false.obs;
@@ -209,5 +214,126 @@ class DashboardController extends GetxController {
     return list;
   }
 
+
+
+  /// featured collection api
+
+// Controller ke andar variables
+  RxMap<String, List<Product>> sectionProducts = <String, List<Product>>{}.obs;
+  RxMap<String, bool> sectionLoading = <String, bool>{}.obs;
+
+// API Method
+  Future<void> fetchSectionProducts(String sectionKey, int tagId) async {
+    try {
+      sectionLoading[sectionKey] = true;
+      final Map<String, dynamic> bodyData = {
+        "limit": "10",
+        "offset": "0",
+        "tags": [tagId],
+      };
+      final response = await _apiClient.post(
+        Uri.parse(ApiUrls.homeProductListApi),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(bodyData),
+      );
+
+      if (response.statusCode == 200) {
+        final productRes = productResponseFromJson(response.body);
+        sectionProducts[sectionKey] = productRes.data.products;
+      }
+    } catch (e) {
+      print("Error fetching $sectionKey: $e");
+    } finally {
+      sectionLoading[sectionKey] = false;
+    }
+  }
+
+// onInit ya refreshData mein call karein
+  void loadAllProductSections() {
+    fetchSectionProducts('trending_products', 1);
+    fetchSectionProducts('recommended_products', 3);
+    fetchSectionProducts('featured_collections', 70);
+  }
+
+  Future<void> toggleWishlist(Product item) async {
+    final int ownerId = AppDataController.to.ownerId.value ?? 0;
+    final String productId = item.productDetails.id;
+    final bool wasWishlisted = item.isWishlisted;
+
+    try {
+      // 1. Current Controller UI Update (Optimistic)
+      item.isWishlisted = !wasWishlisted;
+      sectionProducts.refresh();
+
+      // 2. Dusre Controllers mein bhi turant UI update karein (Sync)
+      _syncOtherControllers(productId, item.isWishlisted);
+
+      dynamic response;
+      if (!wasWishlisted) {
+        response = await _apiClient.post(
+          Uri.parse(ApiUrls.wishlistAddApi),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({"product_id": int.parse(productId), "jeweller_id": ownerId}),
+        );
+      } else {
+        response = await _apiClient.delete(
+          Uri.parse("${ApiUrls.wishlistDeleteApi}/$productId"),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      if ((response.statusCode == 200 || response.statusCode == 201) && responseData['success'] == true) {
+
+        // 3. Wishlist Page ki list update karein
+        if (Get.isRegistered<WishlistController>()) {
+          final wishCtrl = Get.find<WishlistController>();
+          if (!wasWishlisted) {
+            wishCtrl.fetchWishlist(); // Naya item add hua toh list refresh karein
+          } else {
+            wishCtrl.wishlistItems.removeWhere((w) => w.productDetails.id == productId);
+          }
+        }
+
+        Get.rawSnackbar(
+          message: responseData['message'] ?? "Wishlist updated",
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(milliseconds: 900),
+          backgroundColor: Colors.black87,
+        );
+      } else {
+        throw responseData['message'] ?? "Server error";
+      }
+    } catch (e) {
+      // 4. Rollback: Agar fail hua toh sab jagah wapas purana state
+      item.isWishlisted = wasWishlisted;
+      sectionProducts.refresh();
+      _syncOtherControllers(productId, wasWishlisted);
+
+      Get.snackbar("Error", e.toString(), snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  void _syncOtherControllers(String productId, bool status) {
+    if (Get.isRegistered<ProductCatalogueController>()) {
+      final catCtrl = Get.find<ProductCatalogueController>();
+      int index = catCtrl.stockItems.indexWhere((p) => p.productDetails.id == productId);
+      if (index != -1) {
+        catCtrl.stockItems[index].isWishlisted = status;
+        catCtrl.stockItems.refresh();
+      }
+    }
+
+    // Sync Tag Controller (Agar ye function TagController ke bahar hai toh)
+    if (Get.isRegistered<homeProductsListController>()) {
+      final tagCtrl = Get.find<homeProductsListController>();
+      int index = tagCtrl.stockItems.indexWhere((p) => p.productDetails.id == productId);
+      if (index != -1) {
+        tagCtrl.stockItems[index].isWishlisted = status;
+        tagCtrl.stockItems.refresh();
+      }
+    }
+  }
 
 }
