@@ -49,8 +49,7 @@ class homeProductsListController extends GetxController {
 
 
    late String clickType;
-   late int targetId;
-
+    late List<int> targetId;
    List<int> categories = [];
    List<int> tags = [];
 
@@ -60,19 +59,41 @@ class homeProductsListController extends GetxController {
      super.onInit();
      // Get arguments
      clickType = Get.arguments['click_type'] ?? '';
-     targetId = Get.arguments['target_id'] ?? 0;
+     // targetId = Get.arguments['target_id'] ?? 0;
 
-     // Populate lists based on clickType
+     var argTarget = Get.arguments['target_id'];
+
+     if (argTarget is List) {
+       targetId = List<int>.from(argTarget); // Agar List hai toh convert karke daal do
+     } else if (argTarget is int) {
+       targetId = [argTarget]; // Agar galti se single int aaya toh use List bana do [argTarget]
+     } else {
+       targetId = []; // Agar kuch nahi aaya toh empty list
+     }
+
+     // 3. Categories aur Tags ko assign karein
      if (clickType.toLowerCase() == 'category') {
-       categories = [targetId]; // Only categories get the value
-       tags = [];               // Tags stay empty
+       categories = List<int>.from(targetId); // TargetId ki list categories mein copy karein
+       tags = [];
      } else if (clickType.toLowerCase() == 'tag') {
-       tags = [targetId];       // Only tags get the value
-       categories = [];         // Categories stay empty
+       tags = List<int>.from(targetId);       // TargetId ki list tags mein copy karein
+       categories = [];
      } else {
        categories = [];
        tags = [];
      }
+
+     // Populate lists based on clickType
+     // if (clickType.toLowerCase() == 'category') {
+     //   categories = targetId; // Only categories get the value
+     //   tags = [];               // Tags stay empty
+     // } else if (clickType.toLowerCase() == 'tag') {
+     //   tags = targetId;       // Only tags get the value
+     //   categories = [];         // Categories stay empty
+     // } else {
+     //   categories = [];
+     //   tags = [];
+     // }
 
      searchController = TextEditingController();
      categoryController = TextEditingController();

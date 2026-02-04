@@ -7,7 +7,7 @@ class BannerModel {
   final String subtitle;
   final String bannerType;
   final String clickType;
-  final int targetId;
+  final List<int> targetId;
   final int priority;
   final bool isActive;
   final DateTime? createdAt;
@@ -41,7 +41,9 @@ class BannerModel {
       bannerType: json['banner_type'] ?? '',
       clickType: json['click_type'] ?? '',
 
-      targetId: json['target_id'] ?? 0,
+      targetId: json['target_id'] != null
+          ? List<int>.from(json['target_id'])
+          : [],
       priority: json['priority'] ?? 0,
 
       isActive: json['is_active'] ?? false,
