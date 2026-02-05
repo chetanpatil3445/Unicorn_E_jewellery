@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import '../../../Routes/app_routes.dart';
 import '../../../core/apiUrls/api_urls.dart';
 import '../../../core/controller/AppDataController.dart';
 import '../../../core/utils/token_helper.dart';
@@ -332,6 +333,70 @@ class DashboardController extends GetxController {
       if (index != -1) {
         tagCtrl.stockItems[index].isWishlisted = status;
         tagCtrl.stockItems.refresh();
+      }
+    }
+  }
+
+
+  // DashboardController ke andar ye add karein
+
+  Future<void> addToCart(Product item) async {
+    final String productId = item.productDetails.id;
+
+    if (item.isInCart) {
+      Get.toNamed(AppRoutes.cartPage);
+      return;
+    }
+
+    try {
+      // 1. Optimistic Update
+      item.isInCart = true;
+      sectionProducts.refresh(); // UI refresh karein
+
+      // 2. Pure app mein sync karein
+      _syncCartStatusAcrossApp(productId, true);
+
+      final response = await _apiClient.post(
+        Uri.parse(ApiUrls.cartAddApi),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({"item_id": int.parse(productId)}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Get.rawSnackbar(
+          message: "Added to Bag",
+          backgroundColor: Colors.black87,
+          duration: const Duration(milliseconds: 900),
+        );
+      }
+    } catch (e) {
+      // Rollback
+      item.isInCart = false;
+      sectionProducts.refresh();
+      _syncCartStatusAcrossApp(productId, false);
+      Get.snackbar("Error", "Failed to add to cart");
+    }
+  }
+
+// Global Sync Helper for Cart
+  void _syncCartStatusAcrossApp(String productId, bool status) {
+    // Sync Catalogue
+    if (Get.isRegistered<ProductCatalogueController>()) {
+      final catCtrl = Get.find<ProductCatalogueController>();
+      int idx = catCtrl.stockItems.indexWhere((p) => p.productDetails.id == productId);
+      if (idx != -1) {
+        catCtrl.stockItems[idx].isInCart = status;
+        catCtrl.stockItems.refresh();
+      }
+    }
+
+    // Sync HomeProductList (Collections page)
+    if (Get.isRegistered<homeProductsListController>()) {
+      final homeCtrl = Get.find<homeProductsListController>();
+      int idx = homeCtrl.stockItems.indexWhere((p) => p.productDetails.id == productId);
+      if (idx != -1) {
+        homeCtrl.stockItems[idx].isInCart = status;
+        homeCtrl.stockItems.refresh();
       }
     }
   }

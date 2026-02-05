@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:unicorn_e_jewellers/core/controller/AppDataController.dart';
 
+import '../../../Routes/app_routes.dart';
 import '../../../core/apiUrls/api_urls.dart';
+import '../../../core/constants/appcolors.dart';
 import '../../../core/utils/token_helper.dart';
 import '../../dashboard/controller/DashboardController.dart';
 import '../../products/controller/stock_catalogue_controller.dart';
@@ -324,4 +326,75 @@ class TagController extends GetxController {
        dashCtrl.sectionProducts.refresh(); // UI update trigger karein
      }
   }
- }
+
+
+
+
+// Theme color constant
+  static const Color goldAccent = Color(0xFFD4AF37);
+
+  Future<void> addToCart(Product item) async {
+    final String productId = item.productDetails.id;
+    if (item.isInCart) {
+      Get.toNamed(AppRoutes.cartPage);
+      return;
+    }
+
+    try {
+      // 1. Optimistic UI Update
+      item.isInCart = true;
+      stockItems.refresh();
+
+      // 2. Sync with other controllers (Dashboard/Catalogue)
+      _syncCartStatus(productId, true);
+
+      final response = await _apiClient.post(
+        Uri.parse(ApiUrls.cartAddApi),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({"item_id": int.parse(productId)}),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw "Failed to add";
+      }
+
+      Get.rawSnackbar(
+        message: "Added to Bag",
+        duration: const Duration(seconds: 1),
+        backgroundColor: Colors.black87,
+        mainButton: TextButton(
+          onPressed: () => Get.toNamed(AppRoutes.cartPage),
+          child: const Text("VIEW", style: TextStyle(color: goldAccent, fontWeight: FontWeight.bold)),
+        ),
+      );
+    } catch (e) {
+      // Rollback
+      item.isInCart = false;
+      stockItems.refresh();
+      _syncCartStatus(productId, false);
+      Get.snackbar("Error", "Could not add to cart");
+    }
+  }
+
+  void _syncCartStatus(String productId, bool status) {
+    // Sync with Catalogue
+    if (Get.isRegistered<ProductCatalogueController>()) {
+      final catCtrl = Get.find<ProductCatalogueController>();
+      int idx = catCtrl.stockItems.indexWhere((p) => p.productDetails.id == productId);
+      if (idx != -1) {
+        catCtrl.stockItems[idx].isInCart = status;
+        catCtrl.stockItems.refresh();
+      }
+    }
+    // Sync with Dashboard
+    if (Get.isRegistered<DashboardController>()) {
+      final dashCtrl = Get.find<DashboardController>();
+      dashCtrl.sectionProducts.forEach((key, list) {
+        for (var p in list) {
+          if (p.productDetails.id == productId) p.isInCart = status;
+        }
+      });
+      dashCtrl.sectionProducts.refresh();
+    }
+  }
+}

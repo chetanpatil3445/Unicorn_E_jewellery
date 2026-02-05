@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../feature/cart/view/CartPage.dart';
 import '../feature/cr_dr/binding/cr_dr_binding.dart';
 import '../feature/cr_dr/view/AdvanceDetails.dart';
 import '../feature/cr_dr/view/cr_dr_list_view.dart';
@@ -118,6 +119,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.homeProductsList,
       page: () =>   HomeProductList(),
+     ),
+    GetPage(
+      name: AppRoutes.cartPage,
+      page: () =>   CartPage(),
      ),
 
   ];

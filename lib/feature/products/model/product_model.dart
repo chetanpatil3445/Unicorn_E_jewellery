@@ -33,14 +33,16 @@ class Product {
   CalculatedPrice calculatedPrice;
   Weights weights;
   List<ProductImage> imageUrls;
-  bool isWishlisted; // 1. Added the field
+  bool isWishlisted;
+  bool isInCart;
 
   Product({
     required this.productDetails,
     required this.calculatedPrice,
     required this.weights,
     required this.imageUrls,
-    required this.isWishlisted, // 2. Added to constructor
+    required this.isWishlisted,
+    required this.isInCart,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -48,7 +50,8 @@ class Product {
     calculatedPrice: CalculatedPrice.fromJson(json["calculated_price"]),
     weights: Weights.fromJson(json["weights"]),
     imageUrls: List<ProductImage>.from(json["image_urls"].map((x) => ProductImage.fromJson(x))),
-    isWishlisted: json["is_wishlisted"] ?? false, // 3. Added parsing with a default value
+    isWishlisted: json["is_wishlisted"] ?? false,
+    isInCart: json["is_in_cart"] ?? false,
   );
 }
 

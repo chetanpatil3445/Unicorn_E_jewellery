@@ -45,6 +45,7 @@ class ProfileController extends GetxController {
   }
 
   void openWishlist() => Get.toNamed(AppRoutes.wishlist);
+  void openCartList() => Get.toNamed(AppRoutes.cartPage);
 
   void openOrders() => Get.toNamed(AppRoutes.wishlist);
 

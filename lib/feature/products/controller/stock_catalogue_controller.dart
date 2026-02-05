@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:unicorn_e_jewellers/Routes/app_routes.dart';
 import '../../../core/apiUrls/api_urls.dart';
+import '../../../core/constants/appcolors.dart';
 import '../../../core/controller/AppDataController.dart';
 import '../../../core/utils/token_helper.dart';
 import '../../dashboard/controller/DashboardController.dart';
@@ -216,6 +218,59 @@ class ProductCatalogueController extends GetxController {
       });
       dashCtrl.sectionProducts.refresh(); // UI update trigger karein
     }
-
   }
+  Future<void> addToCart(Product item) async {
+    final String productId = item.productDetails.id;
+    final bool wasInCart = item.isInCart;
+
+    // Agar pehle se cart mein hai, toh dobara add karne ki zaroorat nahi
+    if (wasInCart) {
+      Get.toNamed(AppRoutes.cartPage);
+      return;
+    }
+
+    try {
+      // 1. UI Update (Optimistic): Turant icon badal do
+      item.isInCart = true;
+      stockItems.refresh();
+
+      // 2. API Call (POST)
+      final response = await _apiClient.post(
+        Uri.parse(ApiUrls.cartAddApi), // {{baseurlLocal}}cart
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "item_id": int.parse(productId)
+        }),
+      );
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Get.rawSnackbar(
+          message: responseData['message'] ?? "Item added successfully",
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 1),
+          backgroundColor: goldAccent,
+        );
+      } else {
+        throw responseData['message'] ?? "Failed to add item";
+      }
+
+    } catch (e) {
+      // 3. Rollback: Fail hone par icon wapas purana kar do
+      item.isInCart = false;
+      stockItems.refresh();
+
+      Get.snackbar(
+          "Error",
+          e.toString(),
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.redAccent,
+          colorText: Colors.white
+      );
+    }
+  }
+
+
+
 }

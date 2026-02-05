@@ -50,5 +50,8 @@ class ApiUrls {
   static const String stories = "${baseUrl}stories";
   static const String homeSections = "${baseUrl}homepage-sections";
   static const String appBanners = "${baseUrl}app-banners";
+  static const String cartAddApi = "${baseUrl}cart";
+  static const String productReviewsAdd = "${baseUrl}product-reviews";
+  static const String productReviewsList = "${baseUrl}product-reviews/list";
 
 }

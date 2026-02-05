@@ -133,37 +133,89 @@ Widget premiumImage(Product item, double width) {
   );
 }
 
+
 Widget premiumDetails(Product item) {
+  DashboardController controller = Get.find<DashboardController>();
+
   return Padding(
     padding: const EdgeInsets.all(12),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(item.productDetails.productName.toUpperCase(),
-            maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5)),
-        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                item.productDetails.productName.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.cinzel(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    letterSpacing: 0.5
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              "#${item.productDetails.productCode}" ?? "",
+              style: GoogleFonts.poppins(
+                  fontSize: 9,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500
+              ),
+            ),
+          ],
+        ),
         Row(
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(color: goldAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
               child: Text("${item.weights.grossWeight}g",
-                  style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.bold, color: goldAccent)),
+                  style: GoogleFonts.poppins(fontSize: 8, fontWeight: FontWeight.bold, color: goldAccent)),
             ),
             const SizedBox(width: 6),
-            Text(item.productDetails.category, style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey.shade500)),
+            Expanded(
+              child: Text(item.productDetails.category,
+                  maxLines: 1,
+                  style: GoogleFonts.poppins(fontSize: 9, color: Colors.grey.shade500)),
+            ),
           ],
         ),
         const SizedBox(height: 10),
-        Text(inrFormatter.format(item.calculatedPrice.totalValuation),
-            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: deepBlack, fontSize: 16)),
+
+        // --- Updated Price & Cart Row ---
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(inrFormatter.format(item.calculatedPrice.totalValuation),
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: deepBlack, fontSize: 14)),
+
+            GestureDetector(
+              onTap: () => controller.addToCart(item),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: item.isInCart ? goldAccent : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: item.isInCart ? goldAccent : Colors.grey.shade200),
+                ),
+                child: Icon(
+                  item.isInCart ? Icons.shopping_bag : Icons.shopping_bag_outlined,
+                  size: 14,
+                  color: item.isInCart ? Colors.white : deepBlack,
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     ),
   );
 }
-
 
 Widget _buildPlaceholder() {
   return Container(

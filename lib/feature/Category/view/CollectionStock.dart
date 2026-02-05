@@ -340,6 +340,37 @@ class _CollectionStockState extends State<CollectionStock> {
     );
   }
 
+  // Widget _premiumDetails(Product item) {
+  //   return Padding(
+  //     padding: const EdgeInsets.all(12),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       children: [
+  //         Text(item.productDetails.productName.toUpperCase(),
+  //             maxLines: 1, overflow: TextOverflow.ellipsis,
+  //             style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5)),
+  //         const SizedBox(height: 4),
+  //         Row(
+  //           children: [
+  //             Container(
+  //               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+  //               decoration: BoxDecoration(color: goldAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+  //               child: Text("${item.weights.grossWeight}g",
+  //                   style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.bold, color: goldAccent)),
+  //             ),
+  //             const SizedBox(width: 6),
+  //             Text(item.productDetails.category, style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey.shade500)),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 10),
+  //         Text(inrFormatter.format(item.calculatedPrice.totalValuation),
+  //             style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: deepBlack, fontSize: 16)),
+  //       ],
+  //     ),
+  //   );
+  // }
+
   Widget _premiumDetails(Product item) {
     return Padding(
       padding: const EdgeInsets.all(12),
@@ -347,10 +378,33 @@ class _CollectionStockState extends State<CollectionStock> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(item.productDetails.productName.toUpperCase(),
-              maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5)),
-          const SizedBox(height: 4),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  item.productDetails.productName.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.cinzel(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      letterSpacing: 0.5
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                "#${item.productDetails.productCode}" ?? "",
+                style: GoogleFonts.poppins(
+                    fontSize: 9,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500
+                ),
+              ),
+            ],
+          ),
           Row(
             children: [
               Container(
@@ -364,8 +418,40 @@ class _CollectionStockState extends State<CollectionStock> {
             ],
           ),
           const SizedBox(height: 10),
-          Text(inrFormatter.format(item.calculatedPrice.totalValuation),
-              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: deepBlack, fontSize: 16)),
+          // --- PRICE AND CART BUTTON ROW ---
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(inrFormatter.format(item.calculatedPrice.totalValuation),
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: deepBlack, fontSize: 15)),
+
+              // --- BAG BUTTON ---
+              Obx(() {
+                // Re-fetch item to ensure reactive update
+                final currentItem = controller.stockItems.firstWhere((p) => p.productDetails.id == item.productDetails.id, orElse: () => item);
+                bool inBag = currentItem.isInCart;
+
+                return GestureDetector(
+                  onTap: () => controller.addToCart(currentItem),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: inBag ? goldAccent : Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: inBag ? goldAccent : Colors.grey.shade200),
+                      boxShadow: inBag ? [BoxShadow(color: goldAccent.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
+                    ),
+                    child: Icon(
+                      inBag ? Icons.shopping_bag : Icons.shopping_bag_outlined,
+                      size: 16,
+                      color: inBag ? Colors.white : deepBlack,
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
         ],
       ),
     );

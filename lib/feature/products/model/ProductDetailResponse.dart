@@ -26,7 +26,8 @@ class StockData {
   final Weights weights;
   final List<ProductImage> images;
   final List<Stone> stones;
-  bool isWishlisted; // 1. Add this field
+  bool isWishlisted;
+  bool isInCart;
 
   StockData({
     required this.productDetails,
@@ -34,7 +35,8 @@ class StockData {
     required this.weights,
     required this.images,
     required this.stones,
-    required this.isWishlisted, // 2. Add to constructor
+    required this.isWishlisted,
+    required this.isInCart,
   });
 
   factory StockData.fromJson(Map<String, dynamic> json) => StockData(
@@ -43,7 +45,8 @@ class StockData {
     weights: Weights.fromJson(json["weights"]),
     images: List<ProductImage>.from(json["images"].map((x) => ProductImage.fromJson(x))),
     stones: List<Stone>.from(json["stones"].map((x) => Stone.fromJson(x))),
-    isWishlisted: json["is_wishlisted"] ?? false, // 3. Parse from JSON
+    isWishlisted: json["is_wishlisted"] ?? false,
+    isInCart: json["is_in_cart"] ?? false,
   );
 }
 

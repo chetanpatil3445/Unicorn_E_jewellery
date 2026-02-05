@@ -216,33 +216,6 @@ class _ProductCataloguePageState extends State<ProductCataloguePage> {
     );
   }
 
-  // Widget _premiumImage(Product item, double width) {
-  //   String? imageUrl = item.imageUrls.isNotEmpty ? item.imageUrls[0].imageUrl : null;
-  //   return Stack(
-  //     children: [
-  //       Container(
-  //         width: width,
-  //         height: double.infinity,
-  //         decoration: BoxDecoration(
-  //           borderRadius: BorderRadius.circular(15),
-  //           color: const Color(0xFFF9F9F9),
-  //         ),
-  //         clipBehavior: Clip.antiAlias,
-  //         child: imageUrl != null && imageUrl.isNotEmpty
-  //             ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder())
-  //             : _buildPlaceholder(),
-  //       ),
-  //       Positioned(
-  //         top: 8, right: 8,
-  //         child: Container(
-  //           padding: const EdgeInsets.all(6),
-  //           decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), shape: BoxShape.circle),
-  //           child: const Icon(Icons.favorite_border, size: 16, color: deepBlack),
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
 
   Widget _premiumImage(Product item, double width) {
     String? imageUrl = item.imageUrls.isNotEmpty ? item.imageUrls[0].imageUrl : null;
@@ -260,6 +233,7 @@ class _ProductCataloguePageState extends State<ProductCataloguePage> {
               ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder())
               : _buildPlaceholder(),
         ),
+
         Positioned(
           top: 8, right: 8,
           child: GestureDetector(
@@ -300,9 +274,34 @@ class _ProductCataloguePageState extends State<ProductCataloguePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(item.productDetails.productName.toUpperCase(),
-              maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5)),
+         
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  item.productDetails.productName.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.cinzel(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      letterSpacing: 0.5
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                "#${item.productDetails.productCode}" ?? "",
+                style: GoogleFonts.poppins(
+                    fontSize: 9,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500
+                ),
+              ),
+            ],
+          ),
+
           const SizedBox(height: 4),
           Row(
             children: [
@@ -317,14 +316,45 @@ class _ProductCataloguePageState extends State<ProductCataloguePage> {
             ],
           ),
           const SizedBox(height: 10),
-          Text(inrFormatter.format(item.calculatedPrice.totalValuation),
-              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: deepBlack, fontSize: 16)),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(inrFormatter.format(item.calculatedPrice.totalValuation),
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: deepBlack, fontSize: 15)),
+
+              // --- BAG BUTTON ---
+              Obx(() {
+                // Re-fetch item to ensure reactive update
+                final currentItem = controller.stockItems.firstWhere((p) => p.productDetails.id == item.productDetails.id, orElse: () => item);
+                bool inBag = currentItem.isInCart;
+
+                return GestureDetector(
+                  onTap: () => controller.addToCart(currentItem),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: inBag ? goldAccent : Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: inBag ? goldAccent : Colors.grey.shade200),
+                      boxShadow: inBag ? [BoxShadow(color: goldAccent.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
+                    ),
+                    child: Icon(
+                      inBag ? Icons.shopping_bag : Icons.shopping_bag_outlined,
+                      size: 16,
+                      color: inBag ? Colors.white : deepBlack,
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  // ===================== PREMIUM FILTER SHEET =====================
   void _showFilterSheet(BuildContext context) {
     controller.initFilterControllers();
     Get.bottomSheet(
