@@ -45,7 +45,7 @@ class ProfilePage extends StatelessWidget {
               _luxuryItem(Icons.shopping_bag_outlined, "My Orders", "Track, cancel or return", onTap: controller.openOrders),
               _luxuryItem(Icons.favorite_outline, "Wishlist", "Saved luxury pieces", onTap: controller.openWishlist),
               _luxuryItem(Icons.shopping_cart, "My Cart", "Saved luxury pieces", onTap: controller.openCartList),
-              _luxuryItem(Icons.star_outline, "My Reviews", "Your feedback"),
+              _luxuryItem(Icons.star_outline, "My Reviews", "Your feedback",onTap: controller.openReview),
             ]),
 
             _buildMenuSection("ACCOUNT SETTINGS", [

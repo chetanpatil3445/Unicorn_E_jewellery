@@ -20,6 +20,7 @@ import '../feature/login/view/login_page.dart';
 import '../feature/login/view/otp_verify.dart';
 import '../feature/login/view/splash_screen.dart';
 import '../feature/products/view/StockDetailPage.dart';
+import '../feature/reviews/view/MyReviewsPage.dart';
 import '../feature/wishlist/view/wishlist_page.dart';
 import 'app_routes.dart';
 
@@ -123,6 +124,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.cartPage,
       page: () =>   CartPage(),
+     ),
+    GetPage(
+      name: AppRoutes.myReviewsPage,
+      page: () =>   MyReviewsPage(),
      ),
 
   ];

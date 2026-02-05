@@ -101,5 +101,6 @@ class AppRoutes {
   static const String wishlist = '/wishlist';
   static const String homeProductsList = '/HomeProductsList';
   static const String cartPage = '/cartPage';
+  static const String myReviewsPage = '/MyReviewsPage';
 
 }
