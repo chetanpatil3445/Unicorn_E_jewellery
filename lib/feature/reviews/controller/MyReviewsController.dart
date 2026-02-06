@@ -10,11 +10,20 @@ import '../../../core/utils/token_helper.dart';
 
 
 class MyReviewsController extends GetxController {
-
   final ApiClient _apiClient = ApiClient();
+
+  @override
+  void onInit() {
+    // TODO: implement onInit
+    super.onInit();
+    fetchMyReviews();
+  }
+
 
   var isLoading = false.obs;
   var reviews = [].obs;
+
+
 
   Future<void> fetchMyReviews() async {
     try {
@@ -22,7 +31,7 @@ class MyReviewsController extends GetxController {
 
       final int userId = AppDataController.to.staffId.value ?? 0;
 
-      final response = await http.post(
+      final response = await _apiClient.post(
         Uri.parse(ApiUrls.productReviewsList),
         headers: {
           'Content-Type': 'application/json',

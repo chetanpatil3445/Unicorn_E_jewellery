@@ -9,7 +9,6 @@ class MyReviewsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    controller.fetchMyReviews();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA), // Premium light grey background

@@ -49,9 +49,8 @@ class ProfilePage extends StatelessWidget {
             ]),
 
             _buildMenuSection("ACCOUNT SETTINGS", [
-              _luxuryItem(Icons.person_outline, "Edit Profile", "Personal details",
-                  onTap: controller.openEditProfile),
-              _luxuryItem(Icons.location_on_outlined, "Saved Addresses", "Delivery locations"),
+              _luxuryItem(Icons.person_outline, "Edit Profile", "Personal details", onTap: controller.openEditProfile),
+              _luxuryItem(Icons.location_on_outlined, "Saved Addresses", "Delivery locations",onTap: controller.openAdress),
               _luxuryItem(Icons.account_balance_wallet_outlined, "Payment Methods", "Cards & UPI"),
             ]),
 

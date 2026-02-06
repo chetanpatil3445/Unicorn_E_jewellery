@@ -34,6 +34,7 @@ class ApiClient extends http.BaseClient {
       Uri.parse(ApiUrls.refreshToken),
       headers: {
         'Content-Type': 'application/json',
+        "Accept": "application/json",
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode({'refreshToken': refreshToken}),

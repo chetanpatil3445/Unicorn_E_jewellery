@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import '../../Adresses/view/AddAddressScreen.dart';
+import '../controller/PaymentController.dart';
+import '../../Adresses/view/EditAddressScreen.dart';
 
 class PaymentPage extends StatefulWidget {
   @override
@@ -9,6 +12,8 @@ class PaymentPage extends StatefulWidget {
 }
 
 class _PaymentPageState extends State<PaymentPage> {
+  final controller = Get.put(PaymentController());
+
   String selectedMethod = "upi";
   final inrFormatter = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
 
@@ -52,29 +57,22 @@ class _PaymentPageState extends State<PaymentPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 15),
-                  _buildAddressPreview(), // New: Address Summary
+                  _buildAddressPreview(),
                   const SizedBox(height: 15),
-                  _buildDeliveryEstimation(), // New: Delivery Date
+                  _buildDeliveryEstimation(),
                   const SizedBox(height: 20),
                   _buildDetailedOrderBrief(),
                   const SizedBox(height: 25),
-
-                  // Promo Code Section
                   _buildPromoCodeSection(),
                   const SizedBox(height: 25),
-
                   Text("SELECT PAYMENT METHOD",
                       style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
                   const SizedBox(height: 15),
-
                   _paymentOptionCard("upi", "UPI (GPay, PhonePe, Paytm)", Icons.account_balance_wallet_outlined),
                   _paymentOptionCard("card", "Credit / Debit Cards", Icons.credit_card_outlined),
                   _paymentOptionCard("netbanking", "Net Banking", Icons.language_outlined),
-
-                  // COD with condition
                   _paymentOptionCard("cod", "Cash On Delivery", Icons.payments_outlined,
                       subtitle: totalPayable > 50000 ? "Not available for orders above ₹50k" : "Available"),
-
                   const SizedBox(height: 30),
                   _buildSecurityInfo(),
                   const SizedBox(height: 30),
@@ -88,45 +86,145 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  // --- 1. Address Preview Section ---
+  // --- 1. Reactive Address Preview (With Empty State Logic) ---
   Widget _buildAddressPreview() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.location_on_outlined, color: goldAccent, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return Container(
+          height: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)),
+          child: const Center(child: CircularProgressIndicator(color: goldAccent, strokeWidth: 2)),
+        );
+      }
+
+      var addr = controller.selectedAddress;
+      bool hasAddress = addr.isNotEmpty;
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: hasAddress ? Colors.black.withOpacity(0.05) : goldAccent.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(hasAddress ? Icons.location_on_outlined : Icons.add_location_alt_outlined,
+                color: goldAccent, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("DELIVERING TO", style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+                  Text(
+                      hasAddress
+                          ? "${addr['receiver_name']} - ${addr['city']}, ${addr['pincode']}"
+                          : "Please add a delivery address to proceed",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: hasAddress ? FontWeight.w600 : FontWeight.w400,
+                          color: hasAddress ? deepBlack : Colors.grey.shade600
+                      )),
+                ],
+              ),
+            ),
+            // Dynamic Button: CHANGE or ADD
+            ElevatedButton(
+                onPressed: () => _showAddressSelectionSheet(),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: hasAddress ? Colors.transparent : goldAccent,
+                    foregroundColor: hasAddress ? goldAccent : Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    side: BorderSide(color: hasAddress ? Colors.transparent : goldAccent),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+                ),
+                child: Text(hasAddress ? "CHANGE" : "ADD",
+                    style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold)))
+          ],
+        ),
+      );
+    });
+  }
+
+  // --- Address Selection Bottom Sheet (With Add New Logic) ---
+  void _showAddressSelectionSheet() {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("DELIVERING TO", style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
-                Text("Home - Pune, Maharashtra 411001",
-                    maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: deepBlack)),
+                Text("YOUR ADDRESSES", style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, fontSize: 16)),
+                IconButton(onPressed: () => Get.back(), icon: const Icon(Icons.close, size: 20))
               ],
             ),
-          ),
-          TextButton(onPressed: () {}, child: Text("CHANGE", style: GoogleFonts.poppins(fontSize: 11, color: goldAccent, fontWeight: FontWeight.bold)))
-        ],
+            const Divider(),
+
+            // "Add New Address" Action in list
+            ListTile(
+              onTap: () async {
+                Get.back();
+                await Get.to(() => AddAddressScreen());
+                controller.fetchCheckoutAddress();
+              },
+              leading: const Icon(Icons.add_circle_outline, color: goldAccent),
+              title: Text("Add New Address", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: goldAccent)),
+            ),
+
+            Obx(() => controller.addresses.isEmpty
+                ? const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 30), child: Text("No saved addresses found.")))
+                : Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: controller.addresses.length,
+                itemBuilder: (context, index) {
+                  var addr = controller.addresses[index];
+                  bool isSelected = controller.selectedAddress['id'] == addr['id'];
+                  return ListTile(
+                    onTap: () => controller.updateSelectedAddress(addr),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                    leading: Icon(isSelected ? Icons.check_circle : Icons.circle_outlined, color: goldAccent),
+                    title: Text("${addr['receiver_name']} (${addr['address_type']})",
+                        style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold)),
+                    subtitle: Text("${addr['house_no_building']}, ${addr['city']}",
+                        style: GoogleFonts.poppins(fontSize: 11)),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.edit_outlined, color: goldAccent, size: 20),
+                      onPressed: () async {
+                        Get.back();
+                        await Get.to(() => EditAddressScreen(addressData: addr));
+                        controller.fetchCheckoutAddress();
+                      },
+                    ),
+                  );
+                },
+              ),
+            )),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
     );
   }
 
-  // --- 2. Delivery Estimation ---
+  // --- Baki ke standard widgets ---
   Widget _buildDeliveryEstimation() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: successGreen.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: successGreen.withOpacity(0.1)),
-      ),
+      decoration: BoxDecoration(color: successGreen.withOpacity(0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: successGreen.withOpacity(0.1))),
       child: Row(
         children: [
           const Icon(Icons.local_shipping_outlined, color: successGreen, size: 18),
@@ -139,42 +237,15 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  // --- 3. Promo Code Section ---
-  Widget _buildPromoCodeSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: goldAccent.withOpacity(0.3), style: BorderStyle.solid),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.local_offer_outlined, color: goldAccent, size: 18),
-          const SizedBox(width: 12),
-          Text("APPLY PROMO CODE", style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: deepBlack)),
-          const Spacer(),
-          const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-        ],
-      ),
-    );
-  }
-
-  // --- Price Breakdown ---
   Widget _buildDetailedOrderBrief() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("ORDER SUMMARY",
-            style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
+        Text("ORDER SUMMARY", style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.black.withOpacity(0.05)),
-          ),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.black.withOpacity(0.05))),
           child: Column(
             children: [
               _priceRow("Bag Subtotal", inrFormatter.format(subtotal)),
@@ -186,10 +257,8 @@ class _PaymentPageState extends State<PaymentPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("AMOUNT PAYABLE",
-                      style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: deepBlack)),
-                  Text(inrFormatter.format(totalPayable),
-                      style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: deepBlack)),
+                  Text("AMOUNT PAYABLE", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: deepBlack)),
+                  Text(inrFormatter.format(totalPayable), style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: deepBlack)),
                 ],
               ),
             ],
@@ -209,11 +278,9 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  // --- Payment Card (Fixed Overflow) ---
   Widget _paymentOptionCard(String id, String title, IconData icon, {String? subtitle}) {
     bool isSelected = selectedMethod == id;
     bool isDisabled = id == "cod" && totalPayable > 50000;
-
     return GestureDetector(
       onTap: isDisabled ? null : () => setState(() => selectedMethod = id),
       child: Opacity(
@@ -230,28 +297,10 @@ class _PaymentPageState extends State<PaymentPage> {
           ),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: isSelected ? goldAccent.withOpacity(0.1) : Colors.grey.withOpacity(0.1), shape: BoxShape.circle),
-                child: Icon(icon, color: isSelected ? goldAccent : Colors.grey, size: 20),
-              ),
+              Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: isSelected ? goldAccent.withOpacity(0.1) : Colors.grey.withOpacity(0.1), shape: BoxShape.circle), child: Icon(icon, color: isSelected ? goldAccent : Colors.grey, size: 20)),
               const SizedBox(width: 15),
-              Expanded( // <-- FIXED OVERFLOW HERE
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: GoogleFonts.poppins(fontSize: 13, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, color: isSelected ? deepBlack : Colors.grey.shade700)),
-                    if (subtitle != null)
-                      Text(subtitle, style: GoogleFonts.poppins(fontSize: 10, color: isDisabled ? Colors.red : Colors.grey)),
-                  ],
-                ),
-              ),
-              Radio(
-                value: id,
-                groupValue: selectedMethod,
-                activeColor: goldAccent,
-                onChanged: isDisabled ? null : (val) => setState(() => selectedMethod = val as String),
-              )
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: GoogleFonts.poppins(fontSize: 13, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, color: isSelected ? deepBlack : Colors.grey.shade700)), if (subtitle != null) Text(subtitle, style: GoogleFonts.poppins(fontSize: 10, color: isDisabled ? Colors.red : Colors.grey))])),
+              Radio(value: id, groupValue: selectedMethod, activeColor: goldAccent, onChanged: isDisabled ? null : (val) => setState(() => selectedMethod = val as String))
             ],
           ),
         ),
@@ -259,11 +308,9 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  // Standard Components
   Widget _buildProgressStepper() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 15),
-      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 15), color: Colors.white,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -278,67 +325,61 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _stepperIcon(IconData icon, String label, bool isActive) {
-    return Column(children: [
-      Icon(icon, size: 18, color: isActive ? goldAccent : Colors.grey.shade300),
-      const SizedBox(height: 4),
-      Text(label, style: GoogleFonts.poppins(fontSize: 9, color: isActive ? deepBlack : Colors.grey, fontWeight: FontWeight.w600)),
-    ]);
+    return Column(children: [Icon(icon, size: 18, color: isActive ? goldAccent : Colors.grey.shade300), const SizedBox(height: 4), Text(label, style: GoogleFonts.poppins(fontSize: 9, color: isActive ? deepBlack : Colors.grey, fontWeight: FontWeight.w600))]);
   }
 
   Widget _stepperLine(bool isActive) {
-    return Container(width: 35, height: 1, color: isActive ? goldAccent : Colors.grey.shade300, margin: const EdgeInsets.symmetric(horizontal: 5,));
+    return Container(width: 35, height: 1, color: isActive ? goldAccent : Colors.grey.shade300, margin: const EdgeInsets.symmetric(horizontal: 5));
+  }
+
+  Widget _buildPromoCodeSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), border: Border.all(color: goldAccent.withOpacity(0.3))),
+      child: Row(
+        children: [
+          const Icon(Icons.local_offer_outlined, color: goldAccent, size: 18),
+          const SizedBox(width: 12),
+          Text("APPLY PROMO CODE", style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: deepBlack)),
+          const Spacer(),
+          const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+        ],
+      ),
+    );
   }
 
   Widget _buildSecurityInfo() {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.verified_user_outlined, size: 14, color: successGreen),
-            const SizedBox(width: 6),
-            Text("PCI-DSS COMPLIANT | 256-BIT ENCRYPTION", style: GoogleFonts.poppins(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Image.network("https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1200px-PayPal.svg.png", height: 20, color: Colors.grey.withOpacity(0.5), errorBuilder: (c,e,s)=>SizedBox()),
-      ],
-    );
+    return Column(children: [
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.verified_user_outlined, size: 14, color: successGreen), const SizedBox(width: 6), Text("SECURE 256-BIT SSL ENCRYPTION", style: GoogleFonts.poppins(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 0.5))]),
+      const SizedBox(height: 10),
+      const Icon(Icons.security, size: 20, color: Colors.grey),
+    ]);
   }
 
   Widget _buildPayButton() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 34),
-      decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, -5))]
-      ),
+      decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, -5))]),
       child: SizedBox(
-        width: double.infinity,
-        height: 56,
+        width: double.infinity, height: 56,
         child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-              backgroundColor: deepBlack,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              elevation: 0
-          ),
+          style: ElevatedButton.styleFrom(backgroundColor: deepBlack, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), elevation: 0),
           onPressed: () {
+            if (controller.selectedAddress.isEmpty) {
+              Get.snackbar("Address Missing", "Please add a delivery address to place your order.",
+                  backgroundColor: Colors.red.shade700, colorText: Colors.white, snackPosition: SnackPosition.TOP);
+              return;
+            }
             if (selectedMethod == "cod") {
-              // Agar COD select hai toh direct Order Success par le jayein
-              // Get.to(() => OrderSuccessPage());
-              print("Order Placed via COD");
+              print("Placing Order...");
             } else {
-              // Agar Online payment select hai toh popup dikhayein
               _showPaymentMaintenanceDialog();
             }
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                  selectedMethod == "cod" ? "PLACE ORDER (COD)" : "COMPLETE PAYMENT",
-                  style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.2)
-              ),
+              Text(selectedMethod == "cod" ? "PLACE ORDER (COD)" : "COMPLETE PAYMENT", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.2)),
               const SizedBox(width: 12),
               const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
             ],
@@ -352,93 +393,22 @@ class _PaymentPageState extends State<PaymentPage> {
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Container(
+        child: Padding(
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Icon with soft background
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: goldAccent.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.handshake_outlined, color: goldAccent, size: 40), // Construction / Maintenance Feel
-              ),
+              Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: goldAccent.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.handshake_outlined, color: goldAccent, size: 40)),
               const SizedBox(height: 20),
-
-              // Title
-              Text(
-                "ONLINE PAYMENT UNAVAILABLE",
-                textAlign: TextAlign.center,
-                style: GoogleFonts.cinzel(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    letterSpacing: 1,
-                    color: deepBlack
-                ),
-              ),
+              Text("MAINTENANCE", style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, fontSize: 16, color: deepBlack)),
               const SizedBox(height: 15),
-
-              // Professional Message
-              Text(
-                "Our online payment gateway is currently under maintenance as we upgrade our systems to serve you better. We sincerely apologize for any inconvenience caused.",
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                    height: 1.6
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Call to Action
-              Text(
-                "Please select 'Cash on Delivery' to proceed with your order.",
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: successGreen
-                ),
-              ),
+              Text("Online payment is currently down. Please use Cash on Delivery.", textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)),
               const SizedBox(height: 25),
-
-              // Action Button
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: deepBlack,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
-                  ),
-                  onPressed: () {
-                    setState(() => selectedMethod = "cod"); // Auto-select COD
-                    Get.back(); // Close dialog
-                  },
-                  child: Text(
-                    "CHOOSE COD & CONTINUE",
-                    style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12
-                    ),
-                  ),
-                ),
-              ),
+              SizedBox(width: double.infinity, height: 48, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: deepBlack, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), onPressed: () { setState(() => selectedMethod = "cod"); Get.back(); }, child: Text("SWITCH TO COD", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)))),
             ],
           ),
         ),
       ),
-      transitionCurve: Curves.easeInOutBack,
     );
   }
-
 }

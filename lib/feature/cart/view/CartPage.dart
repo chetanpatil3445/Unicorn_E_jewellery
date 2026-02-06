@@ -90,6 +90,7 @@ class CartPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Premium Image Shadow
+          // Premium Image Shadow
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
@@ -97,8 +98,15 @@ class CartPage extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
-              child: Image.network(item.imageUrls[0].imageUrl, width: 100, height: 110, fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) => Container(width:100, height:110, color: premiumGrey, child: const Icon(Icons.image_outlined, color: Colors.grey))),
+              child: item.imageUrls.isNotEmpty // Check if list is not empty
+                  ? Image.network(
+                item.imageUrls[0].imageUrl,
+                width: 100,
+                height: 110,
+                fit: BoxFit.cover,
+                errorBuilder: (c, e, s) => _buildPlaceholder(),
+              )
+                  : _buildPlaceholder(), // Show placeholder if list is empty
             ),
           ),
           const SizedBox(width: 18),
@@ -176,6 +184,15 @@ class CartPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      width: 100,
+      height: 110,
+      color: premiumGrey,
+      child: const Icon(Icons.image_outlined, color: Colors.grey),
     );
   }
 

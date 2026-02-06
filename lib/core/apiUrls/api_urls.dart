@@ -3,10 +3,10 @@
 
 class ApiUrls {
   /// 🔹 Base URL
-  static const String baseUrl = "http://65.0.100.3:3000/api/";
-  static const String baseUrl2 = "http://65.0.100.3:3000/";
-  // static const String baseUrl = "https://stephine-unsplendid-unharshly.ngrok-free.dev/api/";
-  // static const String baseUrl2 = "https://stephine-unsplendid-unharshly.ngrok-free.dev/";
+  // static const String baseUrl = "http://65.0.100.3:3000/api/";
+  // static const String baseUrl2 = "http://65.0.100.3:3000/";
+  static const String baseUrl = "https://stephine-unsplendid-unharshly.ngrok-free.dev/api/";
+  static const String baseUrl2 = "https://stephine-unsplendid-unharshly.ngrok-free.dev/";
 
 
   /// 🔹 Auth Endpoints
@@ -53,5 +53,6 @@ class ApiUrls {
   static const String cartAddApi = "${baseUrl}cart";
   static const String productReviewsAdd = "${baseUrl}product-reviews";
   static const String productReviewsList = "${baseUrl}product-reviews/list";
+  static const String addresses = "${baseUrl}addresses";
 
 }

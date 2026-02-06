@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../feature/Adresses/view/AddressScreen.dart';
 import '../feature/cart/view/CartPage.dart';
 import '../feature/cr_dr/binding/cr_dr_binding.dart';
 import '../feature/cr_dr/view/AdvanceDetails.dart';
@@ -128,6 +129,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.myReviewsPage,
       page: () =>   MyReviewsPage(),
+     ),
+    GetPage(
+      name: AppRoutes.addressScreen,
+      page: () =>   AddressScreen(),
      ),
 
   ];
