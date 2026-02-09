@@ -103,5 +103,6 @@ class AppRoutes {
   static const String cartPage = '/cartPage';
   static const String myReviewsPage = '/MyReviewsPage';
   static const String addressScreen = '/AddressScreen';
+  static const String myOffersScreen = '/MyOffersScreen';
 
 }

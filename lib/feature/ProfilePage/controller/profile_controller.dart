@@ -50,6 +50,7 @@ class ProfileController extends GetxController {
   void openAdress() => Get.toNamed(AppRoutes.addressScreen);
 
   void openOrders() => Get.toNamed(AppRoutes.wishlist);
+  void openOffers() => Get.toNamed(AppRoutes.myOffersScreen);
 
   void openEditProfile() => Get.toNamed(AppRoutes.wishlist);
 

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../Adresses/view/AddAddressScreen.dart';
 import '../controller/PaymentController.dart';
 import '../../Adresses/view/EditAddressScreen.dart';
+import 'CouponListScreen.dart'; // Naya Screen Import karein
 
 class PaymentPage extends StatefulWidget {
   @override
@@ -18,9 +19,7 @@ class _PaymentPageState extends State<PaymentPage> {
   final inrFormatter = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
 
   late double subtotal;
-  double tax = 0.0;
   double delivery = 0.0;
-  double totalPayable = 0.0;
 
   static const Color goldAccent = Color(0xFFD4AF37);
   static const Color deepBlack = Color(0xFF1A1A1A);
@@ -30,8 +29,6 @@ class _PaymentPageState extends State<PaymentPage> {
   void initState() {
     super.initState();
     subtotal = Get.arguments ?? 0.0;
-    tax = subtotal * 0.03;
-    totalPayable = subtotal + tax + delivery;
   }
 
   @override
@@ -61,8 +58,10 @@ class _PaymentPageState extends State<PaymentPage> {
                   const SizedBox(height: 15),
                   _buildDeliveryEstimation(),
                   const SizedBox(height: 20),
-                  _buildDetailedOrderBrief(),
+                  // Reactive Order Summary
+                  Obx(() => _buildDetailedOrderBrief()),
                   const SizedBox(height: 25),
+                  // Reactive Promo Section
                   _buildPromoCodeSection(),
                   const SizedBox(height: 25),
                   Text("SELECT PAYMENT METHOD",
@@ -71,8 +70,13 @@ class _PaymentPageState extends State<PaymentPage> {
                   _paymentOptionCard("upi", "UPI (GPay, PhonePe, Paytm)", Icons.account_balance_wallet_outlined),
                   _paymentOptionCard("card", "Credit / Debit Cards", Icons.credit_card_outlined),
                   _paymentOptionCard("netbanking", "Net Banking", Icons.language_outlined),
-                  _paymentOptionCard("cod", "Cash On Delivery", Icons.payments_outlined,
-                      subtitle: totalPayable > 50000 ? "Not available for orders above ₹50k" : "Available"),
+
+                  // Reactive COD check based on final total
+                  Obx(() {
+                    double finalPayable = (subtotal - controller.discountAmount.value) * 1.03 + delivery;
+                    return _paymentOptionCard("cod", "Cash On Delivery", Icons.payments_outlined,
+                        subtitle: finalPayable > 50000 ? "Not available for orders above ₹50k" : "Available");
+                  }),
                   const SizedBox(height: 30),
                   _buildSecurityInfo(),
                   const SizedBox(height: 30),
@@ -86,7 +90,6 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  // --- 1. Reactive Address Preview (With Empty State Logic) ---
   Widget _buildAddressPreview() {
     return Obx(() {
       if (controller.isLoading.value) {
@@ -130,7 +133,6 @@ class _PaymentPageState extends State<PaymentPage> {
                 ],
               ),
             ),
-            // Dynamic Button: CHANGE or ADD
             ElevatedButton(
                 onPressed: () => _showAddressSelectionSheet(),
                 style: ElevatedButton.styleFrom(
@@ -149,7 +151,6 @@ class _PaymentPageState extends State<PaymentPage> {
     });
   }
 
-  // --- Address Selection Bottom Sheet (With Add New Logic) ---
   void _showAddressSelectionSheet() {
     Get.bottomSheet(
       Container(
@@ -170,8 +171,6 @@ class _PaymentPageState extends State<PaymentPage> {
               ],
             ),
             const Divider(),
-
-            // "Add New Address" Action in list
             ListTile(
               onTap: () async {
                 Get.back();
@@ -181,7 +180,6 @@ class _PaymentPageState extends State<PaymentPage> {
               leading: const Icon(Icons.add_circle_outline, color: goldAccent),
               title: Text("Add New Address", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: goldAccent)),
             ),
-
             Obx(() => controller.addresses.isEmpty
                 ? const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 30), child: Text("No saved addresses found.")))
                 : Flexible(
@@ -220,7 +218,6 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  // --- Baki ke standard widgets ---
   Widget _buildDeliveryEstimation() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -237,7 +234,13 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
+// ... PaymentPage ke andar Summary Widget ka updated logic ...
+
   Widget _buildDetailedOrderBrief() {
+    // Ab calculation simple hai: Subtotal minus applied discount
+    double discount = controller.discountAmount.value;
+    double finalTotal = subtotal - discount;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -249,18 +252,28 @@ class _PaymentPageState extends State<PaymentPage> {
           child: Column(
             children: [
               _priceRow("Bag Subtotal", inrFormatter.format(subtotal)),
-              const SizedBox(height: 12),
-              _priceRow("Estimated GST (3%)", inrFormatter.format(tax)),
+
+              if (discount > 0) ...[
+                const SizedBox(height: 12),
+                _priceRow("Promo Discount", "- ${inrFormatter.format(discount)}", isDiscount: true),
+              ],
+
               const SizedBox(height: 12),
               _priceRow("Shipping & Handling", "FREE", isFree: true),
+
               const Divider(height: 30, thickness: 0.5),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("AMOUNT PAYABLE", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: deepBlack)),
-                  Text(inrFormatter.format(totalPayable), style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: deepBlack)),
+                  Text("TOTAL PAYABLE", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: deepBlack)),
+                  Text(inrFormatter.format(finalTotal), style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: deepBlack)),
                 ],
               ),
+
+              const SizedBox(height: 8),
+              Text("(Prices are inclusive of all taxes)",
+                  style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey, fontStyle: FontStyle.italic)),
             ],
           ),
         ),
@@ -268,19 +281,27 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  Widget _priceRow(String label, String value, {bool isFree = false}) {
+  Widget _priceRow(String label, String value, {bool isFree = false, bool isDiscount = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)),
-        Text(value, style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w600, color: isFree ? successGreen : deepBlack)),
+        Text(value,
+            style: GoogleFonts.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDiscount ? successGreen : (isFree ? successGreen : deepBlack)
+            )),
       ],
     );
   }
-
   Widget _paymentOptionCard(String id, String title, IconData icon, {String? subtitle}) {
     bool isSelected = selectedMethod == id;
-    bool isDisabled = id == "cod" && totalPayable > 50000;
+
+    // Check if COD is disabled based on current total
+    double finalTotal = (subtotal - controller.discountAmount.value) * 1.03;
+    bool isDisabled = id == "cod" && finalTotal > 50000;
+
     return GestureDetector(
       onTap: isDisabled ? null : () => setState(() => selectedMethod = id),
       child: Opacity(
@@ -333,19 +354,132 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildPromoCodeSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), border: Border.all(color: goldAccent.withOpacity(0.3))),
-      child: Row(
-        children: [
-          const Icon(Icons.local_offer_outlined, color: goldAccent, size: 18),
-          const SizedBox(width: 12),
-          Text("APPLY PROMO CODE", style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: deepBlack)),
-          const Spacer(),
-          const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-        ],
-      ),
-    );
+    final TextEditingController _couponTextController = TextEditingController();
+
+    return Obx(() {
+      bool hasCoupon = controller.selectedCoupon.isNotEmpty;
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: hasCoupon ? successGreen : goldAccent.withOpacity(0.3),
+              width: hasCoupon ? 1.5 : 1
+          ),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4)
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("PROMO CODE",
+                    style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                if (!hasCoupon)
+                  GestureDetector(
+                    onTap: () => Get.to(() => CouponListScreen(subtotal: subtotal)),
+                    child: Text("VIEW OFFERS",
+                        style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: goldAccent)),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (hasCoupon)
+            // Applied State
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: successGreen.withOpacity(0.1), shape: BoxShape.circle),
+                    child: const Icon(Icons.verified, color: successGreen, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(controller.selectedCoupon['code'],
+                            style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: deepBlack)),
+                        Text("Savings of ${inrFormatter.format(controller.discountAmount.value)} applied",
+                            style: GoogleFonts.poppins(fontSize: 11, color: successGreen, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                      onPressed: () => controller.removeCoupon(),
+                      icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 22)
+                  )
+                ],
+              )
+            else
+            // Input State (Paste option)
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9F9F9),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextField(
+                        controller: _couponTextController,
+                        style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
+                        decoration: InputDecoration(
+                          hintText: "Enter or paste code",
+                          hintStyle: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
+                          border: InputBorder.none,
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.content_paste, size: 18, color: goldAccent),
+                            onPressed: () async {
+                              // Automatically paste from clipboard
+                              var data = await Get.rootDelegate.history.last.toString(); // Placeholder logic
+                              // Standard way using Clipboard package:
+                              // ClipboardData? data = await Clipboard.getData('text/plain');
+                              // if(data != null) _couponTextController.text = data.text!;
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_couponTextController.text.isNotEmpty) {
+                          controller.applyCoupon(_couponTextController.text.trim(), subtotal);
+                        } else {
+                          Get.snackbar("Error", "Please enter a code",
+                              snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: deepBlack,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text("APPLY", style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                  )
+                ],
+              ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildSecurityInfo() {
@@ -357,36 +491,75 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildPayButton() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 34),
-      decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, -5))]),
-      child: SizedBox(
-        width: double.infinity, height: 56,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: deepBlack, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), elevation: 0),
-          onPressed: () {
-            if (controller.selectedAddress.isEmpty) {
-              Get.snackbar("Address Missing", "Please add a delivery address to place your order.",
-                  backgroundColor: Colors.red.shade700, colorText: Colors.white, snackPosition: SnackPosition.TOP);
-              return;
-            }
-            if (selectedMethod == "cod") {
-              print("Placing Order...");
-            } else {
-              _showPaymentMaintenanceDialog();
-            }
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(selectedMethod == "cod" ? "PLACE ORDER (COD)" : "COMPLETE PAYMENT", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1.2)),
-              const SizedBox(width: 12),
-              const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
-            ],
+    return Obx(() {
+      final double finalTotal =
+          (subtotal - controller.discountAmount.value) * 1.03;
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, -3),
+            ),
+          ],
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          height: 48, // compact height
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: deepBlack,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {
+              if (controller.selectedAddress.isEmpty) {
+                Get.snackbar(
+                  "Address Missing",
+                  "Please add a delivery address to place your order.",
+                  backgroundColor: Colors.red.shade700,
+                  colorText: Colors.white,
+                  snackPosition: SnackPosition.TOP,
+                );
+                return;
+              }
+
+              selectedMethod == "cod"
+                  ? print("Placing Order...")
+                  : _showPaymentMaintenanceDialog();
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  selectedMethod == "cod"
+                      ? "PLACE ORDER (COD)"
+                      : "COMPLETE PAYMENT",
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 12,
+                  color: Colors.white,
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   void _showPaymentMaintenanceDialog() {
