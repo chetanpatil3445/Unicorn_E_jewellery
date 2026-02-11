@@ -56,5 +56,8 @@ class ApiUrls {
   static const String addresses = "${baseUrl}addresses";
   static const String promoCodes = "${baseUrl}coupons/available-coupons";
   static const String validatePromoCode= "${baseUrl}coupons/validate-promo";
+  static const String orderPlace= "${baseUrl}order/place";
+  static const String orderList= "${baseUrl}order?page=1&limit=100&status=Placed";
+  static const String orderDetail= "${baseUrl}order/";
 
 }

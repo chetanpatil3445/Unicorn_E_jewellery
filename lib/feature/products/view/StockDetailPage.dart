@@ -1,12 +1,10 @@
 import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:unicorn_e_jewellers/feature/products/view/product_reviews_page.dart';
-
 import '../../../Routes/app_routes.dart';
 import '../../../core/controller/AppDataController.dart';
 import '../controller/StockDetailController.dart';
@@ -87,10 +85,10 @@ class ProductDetailPage extends StatelessWidget {
     );
   }
 
-  // --- 1. PREMIUM GALLERY (UPDATED: Full Width & Scrollable Thumbnails on Top) ---
-  // --- 1. PREMIUM GALLERY (Updated for Placeholder & Full Width) ---
+
   Widget _buildPremiumGallery(StockData data) {
-    // Ye widget tab dikhega jab image empty ho ya load na ho
+    bool isSoldOut = data.productDetails.status == "SOLD_OUT";
+
     Widget placeholderWidget = Container(
       height: 420,
       width: double.infinity,
@@ -98,9 +96,11 @@ class ProductDetailPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.image_not_supported_outlined, color: Colors.grey.shade400, size: 50),
+          Icon(Icons.image_not_supported_outlined,
+              color: Colors.grey.shade400, size: 50),
           const SizedBox(height: 8),
-          Text("No Image Available", style: GoogleFonts.poppins(color: Colors.grey, fontSize: 12)),
+          Text("No Image Available",
+              style: GoogleFonts.poppins(color: Colors.grey, fontSize: 12)),
         ],
       ),
     );
@@ -116,18 +116,62 @@ class ProductDetailPage extends StatelessWidget {
               height: 420,
               width: double.infinity,
               color: softGrey,
-              child: imageUrl.isEmpty
-                  ? placeholderWidget
-                  : CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.contain,
-                placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 1)),
-                errorWidget: (context, url, error) => placeholderWidget, // Link error pe placeholder
+              // Sold out hone par image ko grayscale/faded effect dena
+              child: ColorFiltered(
+                colorFilter: isSoldOut
+                    ? ColorFilter.mode(
+                    Colors.white.withOpacity(0.5), BlendMode.dstATop)
+                    : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
+                child: imageUrl.isEmpty
+                    ? placeholderWidget
+                    : CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  fit: BoxFit.contain,
+                  placeholder: (context, url) =>
+                  const Center(child: CircularProgressIndicator(strokeWidth: 1)),
+                  errorWidget: (context, url, error) => placeholderWidget,
+                ),
               ),
             ),
           );
         }),
 
+        // --- SOLD OUT DIAGONAL RIBBON ---
+        if (isSoldOut)
+          Positioned(
+            top: 40,
+            left: -35,
+            child: Transform.rotate(
+              angle: -0.785398, // -45 degrees diagonal look ke liye
+              child: Container(
+                width: 160,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.9),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    "SOLD OUT",
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+        // Wishlist Button
         Positioned(
           top: 20,
           right: 20,
@@ -158,7 +202,7 @@ class ProductDetailPage extends StatelessWidget {
           }),
         ),
 
-        // Thumbnails (Sirf tabhi dikhengi jab list empty na ho)
+        // Thumbnails
         if (data.images.isNotEmpty)
           Positioned(
             bottom: 15,
@@ -173,9 +217,11 @@ class ProductDetailPage extends StatelessWidget {
                 itemCount: data.images.length,
                 itemBuilder: (context, i) {
                   return Obx(() {
-                    final isSelected = controller.selectedImageUrl.value == data.images[i].imageUrl;
+                    final isSelected =
+                        controller.selectedImageUrl.value == data.images[i].imageUrl;
                     return GestureDetector(
-                      onTap: () => controller.updateSelectedImage(data.images[i].imageUrl),
+                      onTap: () =>
+                          controller.updateSelectedImage(data.images[i].imageUrl),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         width: 60,
@@ -187,15 +233,29 @@ class ProductDetailPage extends StatelessWidget {
                               color: isSelected ? goldAccent : Colors.transparent,
                               width: 2),
                           boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4))
+                            BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4))
                           ],
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: CachedNetworkImage(
-                            imageUrl: data.images[i].imageUrl,
-                            fit: BoxFit.cover,
-                            errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 20, color: Colors.grey),
+                          // Thumbnails ko bhi sold out hone par fade kiya gaya hai
+                          child: ColorFiltered(
+                            colorFilter: isSoldOut
+                                ? ColorFilter.mode(
+                                Colors.white.withOpacity(0.6), BlendMode.dstATop)
+                                : const ColorFilter.mode(
+                                Colors.transparent, BlendMode.multiply),
+                            child: CachedNetworkImage(
+                              imageUrl: data.images[i].imageUrl,
+                              fit: BoxFit.cover,
+                              errorWidget: (context, url, error) => const Icon(
+                                  Icons.broken_image,
+                                  size: 20,
+                                  color: Colors.grey),
+                            ),
                           ),
                         ),
                       ),
@@ -208,6 +268,7 @@ class ProductDetailPage extends StatelessWidget {
       ],
     );
   }
+
   // --- 2. MAIN INFO ---
   Widget _buildMainInfoSection(StockData data) {
     return Padding(
@@ -507,49 +568,16 @@ class ProductDetailPage extends StatelessWidget {
     );
   }
 
-  // Widget _buildBottomActionBar() {
-  //   return Container(
-  //     padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, -6))],
-  //     ),
-  //     child: Row(
-  //       children: [
-  //         Expanded(
-  //           flex: 2,
-  //           child: SizedBox(
-  //             height: 42,
-  //             child: OutlinedButton.icon(
-  //               onPressed: () {},
-  //               icon: const Icon(Icons.shopping_cart_outlined, size: 18, color: goldAccent),
-  //               label: Text("CART", style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w600, color: goldAccent)),
-  //               style: OutlinedButton.styleFrom(side: const BorderSide(color: goldAccent, width: 1.3), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-  //             ),
-  //           ),
-  //         ),
-  //         const SizedBox(width: 10),
-  //         Expanded(
-  //           flex: 3,
-  //           child: SizedBox(
-  //             height: 42,
-  //             child: ElevatedButton.icon(
-  //               onPressed: () {},
-  //               icon: const Icon(Icons.flash_on_rounded, size: 18, color: Colors.white),
-  //               label: Text("BUY NOW", style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w600, color: Colors.white)),
-  //               style: ElevatedButton.styleFrom(backgroundColor: goldAccent, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-  //             ),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+
+
 
   Widget _buildBottomActionBar() {
     return Obx(() {
       final data = controller.productData.value;
-      final bool isInBag = data?.isInCart ?? false;
+      if (data == null) return const SizedBox();
+
+      final bool isInBag = data.isInCart ?? false;
+      final bool isSoldOut = data.productDetails.status == "SOLD_OUT";
 
       return Container(
         padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
@@ -559,46 +587,59 @@ class ProductDetailPage extends StatelessWidget {
         ),
         child: Row(
           children: [
+            // ADD TO BAG BUTTON
             Expanded(
               flex: 2,
               child: SizedBox(
-                height: 46, // Slightly increased height for luxury feel
+                height: 46,
                 child: OutlinedButton.icon(
-                  onPressed: () => controller.addToCart(),
+                  // Sold out hai to click disable (null)
+                  onPressed: isSoldOut ? null : () => controller.addToCart(),
                   icon: Icon(
-                      isInBag ? Icons.shopping_bag : Icons.shopping_cart_outlined,
+                      isSoldOut ? Icons.not_interested_rounded : (isInBag ? Icons.shopping_bag : Icons.shopping_cart_outlined),
                       size: 18,
-                      color: goldAccent
+                      color: isSoldOut ? Colors.grey : goldAccent
                   ),
                   label: Text(
-                      isInBag ? "GO TO BAG" : "ADD TO BAG",
-                      style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: goldAccent)
+                      isSoldOut ? "OUT OF STOCK" : (isInBag ? "GO TO BAG" : "ADD TO BAG"),
+                      style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: isSoldOut ? Colors.grey : goldAccent
+                      )
                   ),
                   style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: goldAccent, width: 1.5),
-                      backgroundColor: isInBag ? goldAccent.withOpacity(0.05) : Colors.white,
+                      side: BorderSide(color: isSoldOut ? Colors.grey.shade300 : goldAccent, width: 1.5),
+                      backgroundColor: isSoldOut ? Colors.grey.shade100 : (isInBag ? goldAccent.withOpacity(0.05) : Colors.white),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
                   ),
                 ),
               ),
             ),
             const SizedBox(width: 10),
+
+            // BUY NOW BUTTON
             Expanded(
               flex: 3,
               child: SizedBox(
                 height: 46,
                 child: ElevatedButton.icon(
-                  onPressed: () {
+                  // Sold out hai to click disable
+                  onPressed: isSoldOut ? null : () {
                     if (!isInBag) controller.addToCart();
-                    Get.toNamed(AppRoutes.cartPage); // Direct checkout feel
+                    Get.toNamed(AppRoutes.cartPage);
                   },
-                  icon: const Icon(Icons.flash_on_rounded, size: 18, color: Colors.white),
+                  icon: Icon(Icons.flash_on_rounded, size: 18, color: isSoldOut ? Colors.grey : Colors.white),
                   label: Text("BUY NOW",
-                      style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w700, color: Colors.white)
+                      style: GoogleFonts.poppins(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: isSoldOut ? Colors.grey : Colors.white
+                      )
                   ),
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: goldAccent,
-                      elevation: 4,
+                      backgroundColor: isSoldOut ? Colors.grey.shade300 : goldAccent,
+                      elevation: isSoldOut ? 0 : 4,
                       shadowColor: goldAccent.withOpacity(0.4),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
                   ),
@@ -610,7 +651,6 @@ class ProductDetailPage extends StatelessWidget {
       );
     });
   }
-
 
 
   Widget _buildReviewSection(BuildContext context) {
@@ -901,97 +941,6 @@ class ProductDetailPage extends StatelessWidget {
 
 
 
-  Widget _buildReviewItem({
-    required int id,
-    required int userId,
-    required String name,
-    required double rating,
-    required String comment,
-    required String date,
-    required bool isVerified,
-    String? imageMain,
-    String? imageSub,
-  }) {
-    final controller = Get.find<ProductDetailController>();
-    final int currentUserId = AppDataController.to.staffId.value ?? 0;
-    DateTime reviewDate = DateTime.parse(date).toUtc();
-    DateTime currentDate = DateTime.now().toUtc();
-    int daysDifference = currentDate.difference(reviewDate).inDays;
-    bool isExpired = daysDifference >= 3;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(name, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600)),
-
-            if (userId == currentUserId)
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                icon: Icon(
-                    Icons.delete_outline,
-                    size: 18,
-                    color: isExpired ? Colors.grey[300] : Colors.red[400]
-                ),
-                onPressed: () {
-                  if (isExpired) {
-                    Get.snackbar(
-                        "Cannot Delete",
-                        "It has been more than 3 days. Reviews cannot be deleted now.",
-                        backgroundColor: Colors.black87,
-                        colorText: Colors.white
-                    );
-                  } else {
-                    // Confirmation Dialog
-                    Get.defaultDialog(
-                        title: "Delete Review",
-                        middleText: "Are you sure you want to remove this review?",
-                        textConfirm: "Delete",
-                        textCancel: "Cancel",
-                        confirmTextColor: Colors.white,
-                        buttonColor: Colors.red,
-                        onConfirm: () {
-                          Get.back();
-                          controller.deleteReview(id);
-                        }
-                    );
-                  }
-                },
-              )
-            else
-              Text(date.split('T')[0], style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey)),
-          ],
-        ),
-        Row(
-          children: [
-            Row(children: List.generate(5, (i) => Icon(Icons.star_rounded, color: i < rating ? Colors.amber : Colors.grey.shade300, size: 14))),
-            if (isVerified) ...[
-              const SizedBox(width: 8),
-              const Icon(Icons.verified, color: Colors.green, size: 12),
-              const SizedBox(width: 2),
-              Text("Verified Buyer", style: GoogleFonts.poppins(fontSize: 10, color: Colors.green, fontWeight: FontWeight.w500)),
-            ]
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(comment, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade800, height: 1.4)),
-
-        // Images Section
-        if (imageMain != null || imageSub != null) ...[
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              if (imageMain != null) _reviewThumbnail(imageMain,Get.context!),
-              if (imageSub != null) ...[const SizedBox(width: 10), _reviewThumbnail(imageSub,Get.context!)],
-            ],
-          ),
-        ],
-      ],
-    );
-  }
 
 
 
@@ -1208,4 +1157,97 @@ class ProductDetailPage extends StatelessWidget {
       );
     });
   }
+
+  Widget _buildReviewItem({
+    required int id,
+    required int userId,
+    required String name,
+    required double rating,
+    required String comment,
+    required String date,
+    required bool isVerified,
+    String? imageMain,
+    String? imageSub,
+  }) {
+    final controller = Get.find<ProductDetailController>();
+    final int currentUserId = AppDataController.to.staffId.value ?? 0;
+    DateTime reviewDate = DateTime.parse(date).toUtc();
+    DateTime currentDate = DateTime.now().toUtc();
+    int daysDifference = currentDate.difference(reviewDate).inDays;
+    bool isExpired = daysDifference >= 3;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(name, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600)),
+
+            if (userId == currentUserId)
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: Icon(
+                    Icons.delete_outline,
+                    size: 18,
+                    color: isExpired ? Colors.grey[300] : Colors.red[400]
+                ),
+                onPressed: () {
+                  if (isExpired) {
+                    Get.snackbar(
+                        "Cannot Delete",
+                        "It has been more than 3 days. Reviews cannot be deleted now.",
+                        backgroundColor: Colors.black87,
+                        colorText: Colors.white
+                    );
+                  } else {
+                    // Confirmation Dialog
+                    Get.defaultDialog(
+                        title: "Delete Review",
+                        middleText: "Are you sure you want to remove this review?",
+                        textConfirm: "Delete",
+                        textCancel: "Cancel",
+                        confirmTextColor: Colors.white,
+                        buttonColor: Colors.red,
+                        onConfirm: () {
+                          Get.back();
+                          controller.deleteReview(id);
+                        }
+                    );
+                  }
+                },
+              )
+            else
+              Text(date.split('T')[0], style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey)),
+          ],
+        ),
+        Row(
+          children: [
+            Row(children: List.generate(5, (i) => Icon(Icons.star_rounded, color: i < rating ? Colors.amber : Colors.grey.shade300, size: 14))),
+            if (isVerified) ...[
+              const SizedBox(width: 8),
+              const Icon(Icons.verified, color: Colors.green, size: 12),
+              const SizedBox(width: 2),
+              Text("Verified Buyer", style: GoogleFonts.poppins(fontSize: 10, color: Colors.green, fontWeight: FontWeight.w500)),
+            ]
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(comment, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade800, height: 1.4)),
+
+        // Images Section
+        if (imageMain != null || imageSub != null) ...[
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              if (imageMain != null) _reviewThumbnail(imageMain,Get.context!),
+              if (imageSub != null) ...[const SizedBox(width: 10), _reviewThumbnail(imageSub,Get.context!)],
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
 }

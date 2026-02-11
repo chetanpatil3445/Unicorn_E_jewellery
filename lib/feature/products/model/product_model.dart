@@ -57,16 +57,18 @@ class Product {
 
 class ProductDetails {
   String id;
+  String status;
   String productName;
   String productCode;
   String metalType;
   String category;
   String? weightUnit;
 
-  ProductDetails({required this.id, required this.productName,required this.productCode, required this.metalType, required this.category, this.weightUnit});
+  ProductDetails({required this.id,required this.status, required this.productName,required this.productCode, required this.metalType, required this.category, this.weightUnit});
 
   factory ProductDetails.fromJson(Map<String, dynamic> json) => ProductDetails(
     id: json["id"],
+    status: json["status"],
     productName: json["product_name"],
     productCode: json["product_code"],
     category: json["category"],

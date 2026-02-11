@@ -52,6 +52,7 @@ class StockData {
 
 class ProductDetails {
   final String id;
+  final String status;
   final int? refId;
   final String? sourceType;
   final String? productCode;
@@ -75,6 +76,7 @@ class ProductDetails {
 
   ProductDetails({
     required this.id,
+    required this.status,
     this.refId,
     this.sourceType,
     this.productCode,
@@ -99,6 +101,7 @@ class ProductDetails {
 
   factory ProductDetails.fromJson(Map<String, dynamic> json) => ProductDetails(
     id: json["id"].toString(),
+    status: json["status"].toString(),
     refId: json["ref_id"],
     sourceType: json["source_type"],
     productCode: json["product_code"],

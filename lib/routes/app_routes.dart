@@ -2,8 +2,6 @@ class AppRoutes {
 
   static const splash = '/splash-screen';
 
-  static const BottomNavScreen = '/bottomNavScreen';
-  static const HOME = '/home';
   static const LOGIN = '/login';
   static const otpVerify = '/otpVerify';
   static const MainNavigation = '/MainNavigation';
@@ -104,5 +102,7 @@ class AppRoutes {
   static const String myReviewsPage = '/MyReviewsPage';
   static const String addressScreen = '/AddressScreen';
   static const String myOffersScreen = '/MyOffersScreen';
+  static const String orderListPage = '/OrderListPage';
+  static const String orderDetailPage = '/OrderDetailPage';
 
 }

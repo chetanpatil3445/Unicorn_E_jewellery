@@ -19,6 +19,9 @@ class CartController extends GetxController {
     super.onInit();
   }
 
+  RxList<Map<String, dynamic>> checkoutItems = <Map<String, dynamic>>[].obs;
+
+
   Future<void> fetchCart() async {
     try {
       isLoading.value = true;
@@ -27,6 +30,23 @@ class CartController extends GetxController {
       if (response.statusCode == 200) {
         final res = cartResponseFromJson(response.body);
         cartData.value = res.data;
+
+        // --- Naya Logic Yaha Se ---
+        // Purane items clear karein
+        checkoutItems.clear();
+
+        // Har cart item se item_id extract karke list me dalna
+        if (res.data?.items != null) {
+          for (var item in res.data!.items!) {
+            checkoutItems.add({
+              "item_id": int.parse(item.itemDetails!.id!), // String "2" ko int 2 me convert kiya
+              "qty": 1 // Quantity fix 1 rakhni hai
+            });
+          }
+        }
+        // --------------------------
+
+
       }
     } catch (e) {
       print("Cart Fetch Error: $e");

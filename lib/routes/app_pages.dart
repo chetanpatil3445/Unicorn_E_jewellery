@@ -21,6 +21,8 @@ import '../feature/login/view/PasscodeLoginScreen.dart';
 import '../feature/login/view/login_page.dart';
 import '../feature/login/view/otp_verify.dart';
 import '../feature/login/view/splash_screen.dart';
+import '../feature/orders/view/order_detail_page.dart';
+import '../feature/orders/view/order_list_page.dart';
 import '../feature/products/view/StockDetailPage.dart';
 import '../feature/reviews/view/MyReviewsPage.dart';
 import '../feature/wishlist/view/wishlist_page.dart';
@@ -138,6 +140,14 @@ class AppPages {
     GetPage(
       name: AppRoutes.myOffersScreen,
       page: () =>   MyOffersScreen(),
+     ),
+    GetPage(
+      name: AppRoutes.orderListPage,
+      page: () =>   OrderListPage(),
+     ),
+    GetPage(
+      name: AppRoutes.orderDetailPage,
+      page: () =>   OrderDetailPage(),
      ),
 
   ];

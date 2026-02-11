@@ -217,8 +217,52 @@ class _ProductCataloguePageState extends State<ProductCataloguePage> {
   }
 
 
+  // Widget _premiumImage(Product item, double width) {
+  //   String? imageUrl = item.imageUrls.isNotEmpty ? item.imageUrls[0].imageUrl : null;
+  //   return Stack(
+  //     children: [
+  //       Container(
+  //         width: width,
+  //         height: double.infinity,
+  //         decoration: BoxDecoration(
+  //           borderRadius: BorderRadius.circular(15),
+  //           color: const Color(0xFFF9F9F9),
+  //         ),
+  //         clipBehavior: Clip.antiAlias,
+  //         child: imageUrl != null && imageUrl.isNotEmpty
+  //             ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder())
+  //             : _buildPlaceholder(),
+  //       ),
+  //
+  //       Positioned(
+  //         top: 8, right: 8,
+  //         child: GestureDetector(
+  //           onTap: () => controller.toggleWishlist(item), // Function call
+  //           child: Container(
+  //             padding: const EdgeInsets.all(6),
+  //             decoration: BoxDecoration(
+  //                 color: Colors.white.withOpacity(0.9),
+  //                 shape: BoxShape.circle,
+  //                 boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)]
+  //             ),
+  //             child: Icon(
+  //               // Status check karke icon aur color badlein
+  //               item.isWishlisted ? Icons.favorite : Icons.favorite_border,
+  //               size: 18,
+  //               color: item.isWishlisted ? Colors.red : deepBlack,
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
+
   Widget _premiumImage(Product item, double width) {
     String? imageUrl = item.imageUrls.isNotEmpty ? item.imageUrls[0].imageUrl : null;
+    // Status check
+    bool isSoldOut = item.productDetails.status == "SOLD_OUT";
+
     return Stack(
       children: [
         Container(
@@ -229,15 +273,53 @@ class _ProductCataloguePageState extends State<ProductCataloguePage> {
             color: const Color(0xFFF9F9F9),
           ),
           clipBehavior: Clip.antiAlias,
-          child: imageUrl != null && imageUrl.isNotEmpty
-              ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder())
-              : _buildPlaceholder(),
+          child: ColorFiltered(
+            // Agar sold out hai to image ko thoda grayscale/fade kar dega
+            colorFilter: isSoldOut
+                ? ColorFilter.mode(Colors.white.withOpacity(0.5), BlendMode.dstATop)
+                : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
+            child: imageUrl != null && imageUrl.isNotEmpty
+                ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder())
+                : _buildPlaceholder(),
+          ),
         ),
 
+        // --- SOLD OUT RIBBON/BADGE ---
+        if (isSoldOut)
+          Positioned(
+            top: 15,
+            left: -20,
+            child: Transform.rotate(
+              angle: -0.785398, // -45 degrees diagonal look ke liye
+              child: Container(
+                width: 120,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.9),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    "SOLD OUT",
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+        // Wishlist Icon (Already existing)
         Positioned(
           top: 8, right: 8,
           child: GestureDetector(
-            onTap: () => controller.toggleWishlist(item), // Function call
+            onTap: () => controller.toggleWishlist(item),
             child: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
@@ -246,7 +328,6 @@ class _ProductCataloguePageState extends State<ProductCataloguePage> {
                   boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)]
               ),
               child: Icon(
-                // Status check karke icon aur color badlein
                 item.isWishlisted ? Icons.favorite : Icons.favorite_border,
                 size: 18,
                 color: item.isWishlisted ? Colors.red : deepBlack,
@@ -322,28 +403,43 @@ class _ProductCataloguePageState extends State<ProductCataloguePage> {
             children: [
               Text(inrFormatter.format(item.calculatedPrice.totalValuation),
                   style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: deepBlack, fontSize: 15)),
-
-              // --- BAG BUTTON ---
+              // --- BAG BUTTON (DISABLED IF SOLD OUT) ---
               Obx(() {
-                // Re-fetch item to ensure reactive update
-                final currentItem = controller.stockItems.firstWhere((p) => p.productDetails.id == item.productDetails.id, orElse: () => item);
+                final currentItem = controller.stockItems.firstWhere(
+                        (p) => p.productDetails.id == item.productDetails.id,
+                    orElse: () => item
+                );
                 bool inBag = currentItem.isInCart;
+                bool isSoldOut = item.productDetails.status == "SOLD_OUT";
 
                 return GestureDetector(
-                  onTap: () => controller.addToCart(currentItem),
+                  // Agar Sold Out hai to tap disable kar do (null bhej kar)
+                  onTap: isSoldOut ? null : () => controller.addToCart(currentItem),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: inBag ? goldAccent : Colors.white,
+                      // Sold out hone par light grey color, varna normal logic
+                      color: isSoldOut
+                          ? Colors.grey.shade200
+                          : (inBag ? goldAccent : Colors.white),
                       shape: BoxShape.circle,
-                      border: Border.all(color: inBag ? goldAccent : Colors.grey.shade200),
-                      boxShadow: inBag ? [BoxShadow(color: goldAccent.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
+                      border: Border.all(
+                          color: isSoldOut
+                              ? Colors.grey.shade300
+                              : (inBag ? goldAccent : Colors.grey.shade200)
+                      ),
+                      boxShadow: (inBag && !isSoldOut)
+                          ? [BoxShadow(color: goldAccent.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))]
+                          : [],
                     ),
                     child: Icon(
-                      inBag ? Icons.shopping_bag : Icons.shopping_bag_outlined,
+                      isSoldOut ? Icons.shopping_bag : (inBag ? Icons.shopping_bag : Icons.shopping_bag_outlined),
                       size: 16,
-                      color: inBag ? Colors.white : deepBlack,
+                      // Icon color bhi grey kar di hai sold out ke liye
+                      color: isSoldOut
+                          ? Colors.grey.shade500
+                          : (inBag ? Colors.white : deepBlack),
                     ),
                   ),
                 );
