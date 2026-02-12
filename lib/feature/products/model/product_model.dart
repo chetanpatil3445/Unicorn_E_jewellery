@@ -55,24 +55,53 @@ class Product {
   );
 }
 
+// class ProductDetails {
+//   String id;
+//   String status;
+//   String productName;
+//   String productCode;
+//   String metalType;
+//   String category;
+//   String? weightUnit;
+//
+//   ProductDetails({required this.id,required this.status, required this.productName,required this.productCode, required this.metalType, required this.category, this.weightUnit});
+//
+//   factory ProductDetails.fromJson(Map<String, dynamic> json) => ProductDetails(
+//     id: json["id"],
+//     status: json["status"],
+//     productName: json["product_name"],
+//     productCode: json["product_code"],
+//     category: json["category"],
+//     metalType: json["metal_type"],
+//     weightUnit: json["weight_unit"],
+//   );
+// }
 class ProductDetails {
   String id;
-  String status;
+  String? status; // <-- Yahan '?' lagao (Ab ye crash nahi karega)
   String productName;
   String productCode;
   String metalType;
   String category;
   String? weightUnit;
 
-  ProductDetails({required this.id,required this.status, required this.productName,required this.productCode, required this.metalType, required this.category, this.weightUnit});
+  ProductDetails({
+    required this.id,
+    this.status, // <-- Required hata do
+    required this.productName,
+    required this.productCode,
+    required this.metalType,
+    required this.category,
+    this.weightUnit,
+  });
 
   factory ProductDetails.fromJson(Map<String, dynamic> json) => ProductDetails(
-    id: json["id"],
-    status: json["status"],
-    productName: json["product_name"],
-    productCode: json["product_code"],
-    category: json["category"],
-    metalType: json["metal_type"],
+    id: json["id"]?.toString() ?? "",
+    status: json["status"]?.toString(), // Agar JSON me status nahi mila toh ye null set ho jayega, crash nahi karega
+    productName: json["product_name"] ?? "",
+    productCode: json["product_code"] ?? "",
+    category: json["category"] ?? "",
+    metalType: json["metal_type"] ?? "",
     weightUnit: json["weight_unit"],
   );
 }

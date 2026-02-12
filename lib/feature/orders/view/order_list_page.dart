@@ -5,13 +5,23 @@ import 'package:intl/intl.dart';
 import 'package:unicorn_e_jewellers/Routes/app_routes.dart';
 import '../controller/order_controller.dart';
 
-class OrderListPage extends StatelessWidget {
+class OrderListPage extends StatefulWidget {
+  static const Color goldAccent = Color(0xFFD4AF37);
+  static const Color deepBlack = Color(0xFF1A1A1A);
+
+  @override
+  State<OrderListPage> createState() => _OrderListPageState();
+}
+
+class _OrderListPageState extends State<OrderListPage> {
   final OrderController controller = Get.put(OrderController());
   final inrFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
 
-  // Colors for Premium Look
-  static const Color goldAccent = Color(0xFFD4AF37);
-  static const Color deepBlack = Color(0xFF1A1A1A);
+  @override
+  void initState() {
+    super.initState();
+    controller.fetchOrders();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,18 +30,18 @@ class OrderListPage extends StatelessWidget {
       appBar: AppBar(
         surfaceTintColor: Colors.white,
         title: Text("MY ORDERS",
-            style: GoogleFonts.cinzel(color: deepBlack, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.5)),
+            style: GoogleFonts.cinzel(color: OrderListPage.deepBlack, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.5)),
         backgroundColor: Colors.white,
         elevation: 0.5,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: deepBlack, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new, color: OrderListPage.deepBlack, size: 20),
           onPressed: () => Get.back(),
         ),
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator(color: goldAccent));
+          return const Center(child: CircularProgressIndicator(color: OrderListPage.goldAccent));
         }
 
         if (controller.ordersList.isEmpty) {
@@ -40,7 +50,7 @@ class OrderListPage extends StatelessWidget {
 
         return RefreshIndicator(
           onRefresh: () => controller.fetchOrders(),
-          color: goldAccent,
+          color: OrderListPage.goldAccent,
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             itemCount: controller.ordersList.length,
@@ -55,9 +65,11 @@ class OrderListPage extends StatelessWidget {
   }
 
   Widget _buildOrderCard(order) {
-    // Formatting date
     DateTime date = DateTime.parse(order.createdAt);
     String formattedDate = DateFormat('dd MMM yyyy, hh:mm a').format(date);
+
+    // Check if order is cancelled
+    bool isCancelled = order.orderStatus.toString().toLowerCase() == 'cancelled';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
@@ -65,119 +77,165 @@ class OrderListPage extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 8))
-        ],
-      ),
-      child: Column(
-        children: [
-          // Upper Section
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(order.orderNo, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: deepBlack)),
-                    const SizedBox(height: 4),
-                    Text(formattedDate, style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey)),
-                  ],
-                ),
-                _buildStatusBadge(order.orderStatus),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          // Details Section
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                _buildItemCountBox(order.itemsCount),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Total Amount", style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey)),
-                      Text(inrFormat.format(double.parse(order.totalAmount)),
-                          style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: deepBlack)),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text("Payment", style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey)),
-                    Text(order.paymentMode.toUpperCase(),
-                        style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: goldAccent)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          // Action Section
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFBFBFB),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.circle, size: 8, color: Colors.orangeAccent),
-                    const SizedBox(width: 6),
-                    Text("Payment: ${order.paymentStatus}", style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-                TextButton(
-                  onPressed: () {
-                    Get.toNamed(AppRoutes.orderDetailPage, arguments: order.id);
-                    },
-                  child: Row(
-                    children: [
-                      Text("VIEW DETAILS", style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: deepBlack)),
-                      const Icon(Icons.arrow_forward_ios, size: 12, color: deepBlack),
-                    ],
-                  ),
-                )
-              ],
-            ),
+          BoxShadow(
+              color: isCancelled ? Colors.black.withOpacity(0.01) : Colors.black.withOpacity(0.04),
+              blurRadius: 15,
+              offset: const Offset(0, 8)
           )
         ],
+        // Cancelled orders par border de rahe hain taaki separation dikhe
+        border: isCancelled ? Border.all(color: Colors.grey.shade200, width: 1) : null,
+      ),
+      child: Opacity(
+        // Cancelled orders ko thoda faded (dim) dikhayenge
+        opacity: isCancelled ? 0.7 : 1.0,
+        child: Column(
+          children: [
+            // Upper Section
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(order.orderNo,
+                          style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isCancelled ? Colors.grey : OrderListPage.deepBlack
+                          )),
+                      const SizedBox(height: 4),
+                      Text(formattedDate, style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey)),
+                    ],
+                  ),
+                  _buildStatusBadge(order.orderStatus),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // Details Section
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  _buildItemCountBox(order.itemsCount, isCancelled),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Total Amount", style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey)),
+                        Text(inrFormat.format(double.parse(order.totalAmount)),
+                            style: GoogleFonts.outfit(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: isCancelled ? Colors.grey : OrderListPage.deepBlack
+                            )),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text("Payment", style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey)),
+                      Text(order.paymentMode.toUpperCase(),
+                          style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isCancelled ? Colors.grey : OrderListPage.goldAccent
+                          )),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Action Section
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isCancelled ? Colors.grey.shade50 : const Color(0xFFFBFBFB),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.circle, size: 8, color: isCancelled ? Colors.grey : Colors.orangeAccent),
+                      const SizedBox(width: 6),
+                      Text("Payment: ${order.paymentStatus}",
+                          style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: isCancelled ? Colors.grey : Colors.black87
+                          )),
+                    ],
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Get.toNamed(AppRoutes.orderDetailPage, arguments: order.id);
+                    },
+                    child: Row(
+                      children: [
+                        Text("VIEW DETAILS", style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: OrderListPage.deepBlack)),
+                        const Icon(Icons.arrow_forward_ios, size: 12, color: OrderListPage.deepBlack),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildStatusBadge(String status) {
+    bool isCancelled = status.toLowerCase() == 'cancelled';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFE3F2FD),
+        // Cancelled ke liye Light Red background
+        color: isCancelled ? Colors.red.shade50 : const Color(0xFFE3F2FD),
         borderRadius: BorderRadius.circular(20),
+        border: isCancelled ? Border.all(color: Colors.red.shade100) : null,
       ),
       child: Text(status.toUpperCase(),
-          style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blue.shade800, letterSpacing: 0.5)),
+          style: GoogleFonts.poppins(
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              // Cancelled ke liye Red text
+              color: isCancelled ? Colors.red.shade700 : Colors.blue.shade800,
+              letterSpacing: 0.5
+          )),
     );
   }
 
-  Widget _buildItemCountBox(String count) {
+  Widget _buildItemCountBox(String count, bool isCancelled) {
     return Container(
       height: 45, width: 45,
       decoration: BoxDecoration(
-        color: goldAccent.withOpacity(0.1),
+        color: isCancelled ? Colors.grey.shade100 : OrderListPage.goldAccent.withOpacity(0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(count, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: goldAccent)),
-            Text("ITEM", style: GoogleFonts.poppins(fontSize: 7, fontWeight: FontWeight.bold, color: goldAccent)),
+            Text(count, style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: isCancelled ? Colors.grey : OrderListPage.goldAccent
+            )),
+            Text("ITEM", style: GoogleFonts.poppins(
+                fontSize: 7,
+                fontWeight: FontWeight.bold,
+                color: isCancelled ? Colors.grey : OrderListPage.goldAccent
+            )),
           ],
         ),
       ),

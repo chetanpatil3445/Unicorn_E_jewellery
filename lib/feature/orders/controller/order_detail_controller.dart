@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:unicorn_e_jewellers/core/apiUrls/api_urls.dart';
 import 'dart:convert';
 import '../../../core/utils/token_helper.dart';
 import '../models/order_detail_model.dart';
+import 'order_controller.dart';
 
 class OrderDetailController extends GetxController {
   final ApiClient _apiClient = ApiClient();
@@ -52,4 +54,53 @@ class OrderDetailController extends GetxController {
       print("Error fetching address: $e");
     }
   }
+
+  var isCancelling = false.obs;
+
+  Future<void> cancelOrder(int orderId, String reason) async {
+    try {
+      isCancelling(true);
+
+      final Map<String, String> headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+
+      final response = await _apiClient.post(
+        Uri.parse("${ApiUrls.orderDetail}$orderId/cancel"),
+        headers: headers,
+        body: json.encode({"reason": reason}),
+      );
+
+      final result = json.decode(response.body);
+
+      if (response.statusCode == 200 && result['success'] == true) {
+        Get.snackbar(
+          "SUCCESS",
+          result['message'] ?? "Order cancelled successfully",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(15),
+        );
+        await fetchOrderDetails(orderId);
+        if (Get.isRegistered<OrderController>()) {
+          Get.find<OrderController>().fetchOrders();
+        }
+      } else {
+        Get.snackbar(
+          "ERROR",
+          result['message'] ?? "Failed to cancel order",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar("ERROR", "Something went wrong: $e");
+    } finally {
+      isCancelling(false);
+    }
+  }
+
 }
